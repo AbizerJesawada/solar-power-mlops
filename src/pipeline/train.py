@@ -8,18 +8,23 @@ import mlflow.sklearn
 from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 
+
 def load_params():
     with open("params.yaml") as f:
         return yaml.safe_load(f)
 
+
 def train_model():
     params = load_params()
-    
+
     print("Loading processed data...")
     df = pd.read_csv(params['data']['processed'])
-    
-    X = df.drop(columns=['AC_POWER'])
-    y = df['AC_POWER']
+
+    feature_columns = params['model']['features']
+    target_column = params['model']['target']
+
+    X = df[feature_columns]
+    y = df[target_column]
     
     X_train, X_test, y_train, y_test = train_test_split(
         X, y,
@@ -47,6 +52,8 @@ def train_model():
         mlflow.log_param("max_depth", params['model']['max_depth'])
         mlflow.log_param("learning_rate", params['model']['learning_rate'])
         mlflow.log_param("test_size", params['model']['test_size'])
+        mlflow.log_param("target", target_column)
+        mlflow.log_param("features", ",".join(feature_columns))
         
         # Save model
         os.makedirs("models", exist_ok=True)
