@@ -42,6 +42,8 @@ MONTH
 - Matplotlib and Seaborn
 - Streamlit
 - GitHub Actions
+- Docker
+- AWS EC2
 - Git and GitHub
 
 ## Project Structure
@@ -302,7 +304,7 @@ python -m streamlit run app.py
 | Modular Pipeline Design | Separate ingestion, preprocessing, training, evaluation, monitoring, visualization modules |
 | CI/CD Implementation | GitHub Actions runs DVC pull, training, evaluation, app validation, and artifact upload |
 | Model Deployment Strategy | Streamlit prediction app for real-time demo |
-| Cloud Deployment & Infrastructure | AWS S3 used for DVC remote and Docker assets are ready for container deployment |
+| Cloud Deployment & Infrastructure | AWS S3 used for DVC remote and Dockerized Streamlit app deployed on AWS EC2 |
 | Monitoring, Logging & Governance | MLflow logging, pipeline logs, drift report, and governance document implemented |
 | GitHub Repository & Reproducibility | Git repo, requirements, DVC pointers, pipeline commands |
 | Technical Project Report | This README provides base material for report |
@@ -362,8 +364,51 @@ http://localhost:8501
 This containerization makes the project easier to deploy on AWS services such
 as ECS, EC2, App Runner, or ECR-based workflows.
 
+## AWS EC2 Deployment
+
+The Streamlit prediction app was deployed on an AWS EC2 Ubuntu instance using
+Docker.
+
+Deployment summary:
+
+```text
+Streamlit app -> Docker image -> Docker container -> AWS EC2 -> Public URL
+```
+
+EC2 setup:
+
+```text
+AMI: Ubuntu 22.04
+Instance type: t3.micro
+Application port: 8501
+Security group inbound rule: Custom TCP 8501 from 0.0.0.0/0
+```
+
+Commands used on EC2:
+
+```bash
+sudo apt update
+sudo apt install -y docker.io git
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo usermod -aG docker ubuntu
+git clone https://github.com/AbizerJesawada/solar-power-mlops.git
+cd solar-power-mlops
+docker build -t solar-power-mlops .
+docker run -d -p 8501:8501 --name solar-app solar-power-mlops
+docker ps
+```
+
+Deployed app URL:
+
+```text
+http://65.1.133.227:8501
+```
+
+Note: The EC2 instance should be stopped when not in use to avoid unnecessary
+AWS charges.
+
 ## Future Work
 
-- Deploy the app on AWS.
-- Improve experiment organization so training parameters and evaluation metrics
-  are logged in a single MLflow run.
+- Add HTTPS/domain support for the deployed app.
+- Add automated deployment from GitHub Actions to AWS.
