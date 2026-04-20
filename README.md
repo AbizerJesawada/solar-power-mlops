@@ -302,14 +302,46 @@ python -m streamlit run app.py
 | Modular Pipeline Design | Separate ingestion, preprocessing, training, evaluation, monitoring, visualization modules |
 | CI/CD Implementation | GitHub Actions runs DVC pull, training, evaluation, app validation, and artifact upload |
 | Model Deployment Strategy | Streamlit prediction app for real-time demo |
-| Cloud Deployment & Infrastructure | AWS S3 used for DVC remote; app/cloud deployment is next |
+| Cloud Deployment & Infrastructure | AWS S3 used for DVC remote and Docker assets are ready for container deployment |
 | Monitoring, Logging & Governance | MLflow logging and JSON drift report implemented |
 | GitHub Repository & Reproducibility | Git repo, requirements, DVC pointers, pipeline commands |
 | Technical Project Report | This README provides base material for report |
 
+## Docker Deployment
+
+The Streamlit app is containerized for deployment readiness.
+
+Files:
+
+```text
+Dockerfile
+.dockerignore
+docker-requirements.txt
+```
+
+Build the image:
+
+```powershell
+docker build -t solar-power-mlops .
+```
+
+Run the container:
+
+```powershell
+docker run -p 8501:8501 solar-power-mlops
+```
+
+Open:
+
+```text
+http://localhost:8501
+```
+
+This containerization makes the project easier to deploy on AWS services such
+as ECS, EC2, App Runner, or ECR-based workflows.
+
 ## Future Work
 
-- Add Dockerfile for containerized deployment.
 - Deploy the app on AWS.
 - Improve experiment organization so training parameters and evaluation metrics
   are logged in a single MLflow run.
