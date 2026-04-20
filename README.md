@@ -303,7 +303,7 @@ python -m streamlit run app.py
 | CI/CD Implementation | GitHub Actions runs DVC pull, training, evaluation, app validation, and artifact upload |
 | Model Deployment Strategy | Streamlit prediction app for real-time demo |
 | Cloud Deployment & Infrastructure | AWS S3 used for DVC remote and Docker assets are ready for container deployment |
-| Monitoring, Logging & Governance | MLflow logging and JSON drift report implemented |
+| Monitoring, Logging & Governance | MLflow logging, pipeline logs, drift report, and governance document implemented |
 | GitHub Repository & Reproducibility | Git repo, requirements, DVC pointers, pipeline commands |
 | Technical Project Report | This README provides base material for report |
 
@@ -317,6 +317,17 @@ logs/pipeline.log
 
 The log file records data ingestion, preprocessing, training, evaluation,
 monitoring, metrics, and drift status. The `logs/` directory is ignored by Git.
+
+## Governance
+
+Project governance is documented in:
+
+```text
+docs/governance.md
+```
+
+It covers data governance, experiment tracking, model governance, monitoring,
+logging, CI/CD controls, deployment governance, and security notes.
 
 ## Docker Deployment
 
