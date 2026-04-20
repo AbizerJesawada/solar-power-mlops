@@ -1,0 +1,15 @@
+data:
+  raw_generation: data/raw/Plant_1_Generation_Data.csv
+  raw_weather: data/raw/Plant_1_Weather_Sensor_Data.csv
+  processed: data/processed/final_data.csv
+
+model:
+  test_size: 0.2
+  random_state: 42
+  n_estimators: 100
+  max_depth: 6
+  learning_rate: 0.1
+
+output:
+  model_path: models/model.pkl
+  reports_path: reports/metrics.json
