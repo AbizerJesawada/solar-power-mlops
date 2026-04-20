@@ -104,15 +104,13 @@ def evaluate_model(model, X_test, y_test):
 
     reports_dir = os.path.dirname(params['output']['reports_path']) or "."
     plot_paths = create_evaluation_visualizations(y_test, y_pred, metrics, reports_dir)
-    
+
     # Log to MLflow
-    mlflow.set_experiment("solar-power-forecasting")
-    with mlflow.start_run():
-        mlflow.log_metric("RMSE", rmse)
-        mlflow.log_metric("MAE", mae)
-        mlflow.log_metric("R2_Score", r2)
-        for plot_path in plot_paths:
-            mlflow.log_artifact(plot_path, artifact_path="evaluation_plots")
+    mlflow.log_metric("RMSE", rmse)
+    mlflow.log_metric("MAE", mae)
+    mlflow.log_metric("R2_Score", r2)
+    for plot_path in plot_paths:
+        mlflow.log_artifact(plot_path, artifact_path="evaluation_plots")
     
     # Save metrics to JSON
     os.makedirs("reports", exist_ok=True)

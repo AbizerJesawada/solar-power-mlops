@@ -1,6 +1,7 @@
 import json
 import os
 
+import mlflow
 import pandas as pd
 import yaml
 
@@ -66,6 +67,16 @@ def run_drift_monitoring():
     os.makedirs(os.path.dirname(report_path), exist_ok=True)
     with open(report_path, "w") as f:
         json.dump(report, f, indent=4)
+
+    mlflow.log_metric("drift_detected", int(drift_detected))
+    mlflow.log_metric("drift_threshold_percent", threshold_percent)
+    for feature, result in drift_results.items():
+        mlflow.log_metric(f"drift_percent_{feature}", result["drift_percent"])
+        mlflow.log_metric(
+            f"drift_detected_{feature}",
+            int(result["drift_detected"]),
+        )
+    mlflow.log_artifact(report_path, artifact_path="monitoring")
 
     print(f"Drift detected: {drift_detected}")
     print(f"Drift report saved to {report_path}")
