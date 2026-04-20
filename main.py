@@ -2,6 +2,7 @@ from src.pipeline.data_ingestion import ingest_data
 from src.pipeline.preprocessing import preprocess_data
 from src.pipeline.train import train_model
 from src.pipeline.evaluate import evaluate_model
+from src.pipeline.monitoring import run_drift_monitoring
 
 if __name__ == "__main__":
     print("Starting Solar Power MLOps Pipeline...")
@@ -17,6 +18,10 @@ if __name__ == "__main__":
     
     # Step 4: Evaluate
     metrics = evaluate_model(model, X_test, y_test)
-    
+
+    # Step 5: Monitor
+    drift_report = run_drift_monitoring()
+
     print("\nPipeline Complete!")
     print(f"Final Metrics: {metrics}")
+    print(f"Drift Detected: {drift_report['drift_detected']}")

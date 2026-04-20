@@ -21,3 +21,7 @@ model:
 output:
   model_path: models/model.pkl
   reports_path: reports/metrics.json
+  drift_report_path: reports/drift_report.json
+
+monitoring:
+  drift_threshold_percent: 20

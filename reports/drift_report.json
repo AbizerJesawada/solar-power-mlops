@@ -1,0 +1,42 @@
+{
+    "threshold_percent": 20,
+    "drift_detected": false,
+    "features": {
+        "AMBIENT_TEMPERATURE": {
+            "reference_mean": 25.7902,
+            "current_mean": 24.6316,
+            "drift_percent": 4.4924,
+            "drift_detected": false
+        },
+        "MODULE_TEMPERATURE": {
+            "reference_mean": 31.7089,
+            "current_mean": 29.3893,
+            "drift_percent": 7.3153,
+            "drift_detected": false
+        },
+        "IRRADIATION": {
+            "reference_mean": 0.2388,
+            "current_mean": 0.2061,
+            "drift_percent": 13.6904,
+            "drift_detected": false
+        },
+        "HOUR": {
+            "reference_mean": 11.4649,
+            "current_mean": 11.9756,
+            "drift_percent": 4.4546,
+            "drift_detected": false
+        },
+        "DAY": {
+            "reference_mean": 16.1523,
+            "current_mean": 14.2052,
+            "drift_percent": 12.0544,
+            "drift_detected": false
+        },
+        "MONTH": {
+            "reference_mean": 5.3982,
+            "current_mean": 6.0,
+            "drift_percent": 11.1487,
+            "drift_detected": false
+        }
+    }
+}

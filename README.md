@@ -2,8 +2,8 @@
 
 This project builds an end-to-end machine learning pipeline to forecast solar
 power generation from weather and time-based features. The pipeline uses DVC for
-data versioning, MLflow for experiment tracking, XGBoost for regression, and
-Streamlit for an interactive prediction interface.
+data versioning, MLflow for experiment tracking, XGBoost for regression,
+GitHub Actions for CI, and Streamlit for an interactive prediction interface.
 
 ## Problem Statement
 
@@ -41,37 +41,41 @@ MONTH
 - MLflow
 - Matplotlib and Seaborn
 - Streamlit
+- GitHub Actions
 - Git and GitHub
 
 ## Project Structure
 
 ```text
 solar-power-mlops/
-├── app.py
-├── main.py
-├── params.yaml
-├── requirements.txt
-├── data/
-│   ├── raw/
-│   │   ├── Plant_1_Generation_Data.csv.dvc
-│   │   └── Plant_1_Weather_Sensor_Data.csv.dvc
-│   └── processed/
-│       └── final_data.csv
-├── models/
-│   └── model.pkl
-├── reports/
-│   ├── metrics.json
-│   ├── actual_vs_predicted.png
-│   ├── residual_distribution.png
-│   ├── residuals_vs_predicted.png
-│   └── evaluation_metrics.png
-└── src/
-    └── pipeline/
-        ├── data_ingestion.py
-        ├── preprocessing.py
-        ├── train.py
-        ├── evaluate.py
-        └── visualization.py
+|-- app.py
+|-- main.py
+|-- params.yaml
+|-- requirements.txt
+|-- .github/workflows/ci.yml
+|-- data/
+|   |-- raw/
+|   |   |-- Plant_1_Generation_Data.csv.dvc
+|   |   `-- Plant_1_Weather_Sensor_Data.csv.dvc
+|   `-- processed/
+|       `-- final_data.csv
+|-- models/
+|   `-- model.pkl
+|-- reports/
+|   |-- metrics.json
+|   |-- drift_report.json
+|   |-- actual_vs_predicted.png
+|   |-- residual_distribution.png
+|   |-- residuals_vs_predicted.png
+|   `-- evaluation_metrics.png
+`-- src/
+    `-- pipeline/
+        |-- data_ingestion.py
+        |-- preprocessing.py
+        |-- train.py
+        |-- evaluate.py
+        |-- monitoring.py
+        `-- visualization.py
 ```
 
 ## Pipeline Flow
@@ -83,7 +87,9 @@ solar-power-mlops/
    MLflow.
 4. `evaluate.py` calculates metrics, saves evaluation plots, and logs metrics
    and artifacts to MLflow.
-5. `app.py` provides a Streamlit interface for real-time prediction.
+5. `monitoring.py` creates a drift report by comparing reference and current
+   feature distributions.
+6. `app.py` provides a Streamlit interface for real-time prediction.
 
 Run the complete pipeline:
 
@@ -158,7 +164,7 @@ Latest evaluation metrics:
 }
 ```
 
-The model now forecasts `AC_POWER` using only weather and time features. This is
+The model forecasts `AC_POWER` using only weather and time features. This is
 more realistic than using generation columns such as `DC_POWER`, because those
 are directly related to the target.
 
@@ -180,6 +186,61 @@ The app accepts weather and time inputs and returns:
 
 ```text
 Predicted AC Power
+```
+
+## Monitoring and Drift Detection
+
+The project includes a simple data drift monitoring step in
+`src/pipeline/monitoring.py`. It compares the first 80% of processed records as
+reference data against the latest 20% as current data.
+
+For each model feature, it calculates:
+
+- Reference mean
+- Current mean
+- Percentage drift
+- Drift detected flag
+
+The drift threshold is configured in `params.yaml`:
+
+```yaml
+monitoring:
+  drift_threshold_percent: 20
+```
+
+Run monitoring as part of the full pipeline:
+
+```powershell
+python main.py
+```
+
+Or run only monitoring:
+
+```powershell
+python src/pipeline/monitoring.py
+```
+
+Output:
+
+```text
+reports/drift_report.json
+```
+
+## CI/CD with GitHub Actions
+
+The project uses GitHub Actions for CI. On each push to `main`, the workflow:
+
+- Sets up Python
+- Installs required ML and MLOps dependencies
+- Pulls DVC-tracked data from AWS S3
+- Runs the training and evaluation pipeline
+- Validates the Streamlit app import
+- Uploads generated model and report artifacts
+
+Workflow file:
+
+```text
+.github/workflows/ci.yml
 ```
 
 ## Visualizations
@@ -238,19 +299,17 @@ python -m streamlit run app.py
 | --- | --- |
 | Problem Definition & ML Use Case | Solar AC power forecasting regression problem |
 | Data Versioning & Experiment Tracking | DVC with S3 remote, MLflow experiment tracking |
-| Modular Pipeline Design | Separate ingestion, preprocessing, training, evaluation, visualization modules |
-| CI/CD Implementation | Planned next using GitHub Actions |
+| Modular Pipeline Design | Separate ingestion, preprocessing, training, evaluation, monitoring, visualization modules |
+| CI/CD Implementation | GitHub Actions runs DVC pull, training, evaluation, app validation, and artifact upload |
 | Model Deployment Strategy | Streamlit prediction app for real-time demo |
 | Cloud Deployment & Infrastructure | AWS S3 used for DVC remote; app/cloud deployment is next |
-| Monitoring, Logging & Governance | MLflow logging implemented; drift monitoring is next |
+| Monitoring, Logging & Governance | MLflow logging and JSON drift report implemented |
 | GitHub Repository & Reproducibility | Git repo, requirements, DVC pointers, pipeline commands |
 | Technical Project Report | This README provides base material for report |
 
 ## Future Work
 
-- Add GitHub Actions CI/CD workflow.
 - Add Dockerfile for containerized deployment.
 - Deploy the app on AWS.
-- Add data drift monitoring.
 - Improve experiment organization so training parameters and evaluation metrics
   are logged in a single MLflow run.
