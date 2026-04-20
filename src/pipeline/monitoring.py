@@ -5,6 +5,10 @@ import mlflow
 import pandas as pd
 import yaml
 
+from src.logger import get_logger
+
+logger = get_logger(__name__)
+
 
 def load_params():
     with open("params.yaml") as f:
@@ -40,7 +44,7 @@ def run_drift_monitoring():
     threshold_percent = params["monitoring"]["drift_threshold_percent"]
     report_path = params["output"]["drift_report_path"]
 
-    print("Running data drift monitoring...")
+    logger.info("Running data drift monitoring...")
     df = pd.read_csv(processed_path)
 
     split_index = int(len(df) * 0.8)
@@ -78,11 +82,13 @@ def run_drift_monitoring():
         )
     mlflow.log_artifact(report_path, artifact_path="monitoring")
 
-    print(f"Drift detected: {drift_detected}")
-    print(f"Drift report saved to {report_path}")
+    logger.info("Drift detected: %s", drift_detected)
+    logger.info("Drift report saved to %s", report_path)
 
     return report
 
 
 if __name__ == "__main__":
-    run_drift_monitoring()
+    mlflow.set_experiment("solar-power-forecasting")
+    with mlflow.start_run():
+        run_drift_monitoring()

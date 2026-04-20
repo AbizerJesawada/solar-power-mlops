@@ -2,19 +2,22 @@ import pandas as pd
 import os
 import yaml
 
+from src.logger import get_logger
+
+logger = get_logger(__name__)
+
 def load_params():
     with open("params.yaml") as f:
         return yaml.safe_load(f)
 
 def preprocess_data(gen_df, weather_df):
-    print("Merging datasets...")
+    logger.info("Merging datasets...")
     gen_df['DATE_TIME'] = pd.to_datetime(gen_df['DATE_TIME'], dayfirst=True)
-    # To this:
     weather_df['DATE_TIME'] = pd.to_datetime(weather_df['DATE_TIME'], dayfirst=False)
     
     df = pd.merge(gen_df, weather_df, on='DATE_TIME', how='inner')
     
-    print("Feature engineering...")
+    logger.info("Feature engineering...")
     df['HOUR'] = df['DATE_TIME'].dt.hour
     df['DAY'] = df['DATE_TIME'].dt.day
     df['MONTH'] = df['DATE_TIME'].dt.month
@@ -27,13 +30,13 @@ def preprocess_data(gen_df, weather_df):
     # Drop nulls
     df.dropna(inplace=True)
     
-    print(f"Processed Data Shape: {df.shape}")
+    logger.info("Processed Data Shape: %s", df.shape)
     
     # Save processed data
     params = load_params()
     os.makedirs("data/processed", exist_ok=True)
     df.to_csv(params['data']['processed'], index=False)
-    print("Preprocessing Complete!")
+    logger.info("Preprocessing Complete!")
     
     return df
 
@@ -41,4 +44,4 @@ if __name__ == "__main__":
     from data_ingestion import ingest_data
     gen_df, weather_df = ingest_data()
     df = preprocess_data(gen_df, weather_df)
-    print(df.head())
+    logger.info("Processed data preview:\n%s", df.head())

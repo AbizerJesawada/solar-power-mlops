@@ -11,6 +11,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
+from src.logger import get_logger
+
+logger = get_logger(__name__)
+
 def load_params():
     with open("params.yaml") as f:
         return yaml.safe_load(f)
@@ -33,7 +37,7 @@ def create_evaluation_visualizations(y_test, y_pred, metrics, reports_dir="repor
     actual_vs_predicted_path = os.path.join(reports_dir, "actual_vs_predicted.png")
     plt.savefig(actual_vs_predicted_path)
     plt.close()
-    print("Evaluation plot saved: actual_vs_predicted.png")
+    logger.info("Evaluation plot saved: actual_vs_predicted.png")
 
     # Plot 2: Residual Distribution
     plt.figure(figsize=(10, 5))
@@ -46,7 +50,7 @@ def create_evaluation_visualizations(y_test, y_pred, metrics, reports_dir="repor
     residual_distribution_path = os.path.join(reports_dir, "residual_distribution.png")
     plt.savefig(residual_distribution_path)
     plt.close()
-    print("Evaluation plot saved: residual_distribution.png")
+    logger.info("Evaluation plot saved: residual_distribution.png")
 
     # Plot 3: Residuals vs Predicted AC Power
     plt.figure(figsize=(10, 5))
@@ -59,7 +63,7 @@ def create_evaluation_visualizations(y_test, y_pred, metrics, reports_dir="repor
     residuals_vs_predicted_path = os.path.join(reports_dir, "residuals_vs_predicted.png")
     plt.savefig(residuals_vs_predicted_path)
     plt.close()
-    print("Evaluation plot saved: residuals_vs_predicted.png")
+    logger.info("Evaluation plot saved: residuals_vs_predicted.png")
 
     # Plot 4: Evaluation Metrics
     plt.figure(figsize=(8, 5))
@@ -73,7 +77,7 @@ def create_evaluation_visualizations(y_test, y_pred, metrics, reports_dir="repor
     metrics_path = os.path.join(reports_dir, "evaluation_metrics.png")
     plt.savefig(metrics_path)
     plt.close()
-    print("Evaluation plot saved: evaluation_metrics.png")
+    logger.info("Evaluation plot saved: evaluation_metrics.png")
 
     return [
         actual_vs_predicted_path,
@@ -85,7 +89,7 @@ def create_evaluation_visualizations(y_test, y_pred, metrics, reports_dir="repor
 def evaluate_model(model, X_test, y_test):
     params = load_params()
     
-    print("Evaluating model...")
+    logger.info("Evaluating model...")
     y_pred = model.predict(X_test)
     
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
@@ -98,9 +102,9 @@ def evaluate_model(model, X_test, y_test):
         "R2_Score": float(round(r2, 4))
     }
     
-    print(f"RMSE: {rmse:.4f}")
-    print(f"MAE: {mae:.4f}")
-    print(f"R2 Score: {r2:.4f}")
+    logger.info("RMSE: %.4f", rmse)
+    logger.info("MAE: %.4f", mae)
+    logger.info("R2 Score: %.4f", r2)
 
     reports_dir = os.path.dirname(params['output']['reports_path']) or "."
     plot_paths = create_evaluation_visualizations(y_test, y_pred, metrics, reports_dir)
@@ -117,10 +121,12 @@ def evaluate_model(model, X_test, y_test):
     with open(params['output']['reports_path'], 'w') as f:
         json.dump(metrics, f, indent=4)
     
-    print("Evaluation Complete!")
+    logger.info("Evaluation Complete!")
     return metrics
 
 if __name__ == "__main__":
     from train import train_model
-    model, X_test, y_test = train_model()
-    evaluate_model(model, X_test, y_test)
+    mlflow.set_experiment("solar-power-forecasting")
+    with mlflow.start_run():
+        model, X_test, y_test = train_model()
+        evaluate_model(model, X_test, y_test)

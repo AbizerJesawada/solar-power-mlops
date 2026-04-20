@@ -8,6 +8,9 @@ import mlflow.sklearn
 from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 
+from src.logger import get_logger
+
+logger = get_logger(__name__)
 
 def load_params():
     with open("params.yaml") as f:
@@ -17,7 +20,7 @@ def load_params():
 def train_model():
     params = load_params()
 
-    print("Loading processed data...")
+    logger.info("Loading processed data...")
     df = pd.read_csv(params['data']['processed'])
 
     feature_columns = params['model']['features']
@@ -32,10 +35,10 @@ def train_model():
         random_state=params['model']['random_state']
     )
     
-    print(f"Training samples: {X_train.shape[0]}")
-    print(f"Testing samples: {X_test.shape[0]}")
+    logger.info("Training samples: %s", X_train.shape[0])
+    logger.info("Testing samples: %s", X_test.shape[0])
 
-    print("Training XGBoost model...")
+    logger.info("Training XGBoost model...")
     model = XGBRegressor(
         n_estimators=params['model']['n_estimators'],
         max_depth=params['model']['max_depth'],
@@ -67,9 +70,11 @@ def train_model():
             "xgboost.sklearn.XGBRegressor",
         ],
     )
-    print("Training Complete!")
+    logger.info("Training Complete!")
 
     return model, X_test, y_test
 
 if __name__ == "__main__":
-    train_model()
+    mlflow.set_experiment("solar-power-forecasting")
+    with mlflow.start_run():
+        train_model()

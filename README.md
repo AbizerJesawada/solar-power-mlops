@@ -307,6 +307,17 @@ python -m streamlit run app.py
 | GitHub Repository & Reproducibility | Git repo, requirements, DVC pointers, pipeline commands |
 | Technical Project Report | This README provides base material for report |
 
+## Pipeline Logging
+
+The project uses Python logging for pipeline execution logs. Logs are written to:
+
+```text
+logs/pipeline.log
+```
+
+The log file records data ingestion, preprocessing, training, evaluation,
+monitoring, metrics, and drift status. The `logs/` directory is ignored by Git.
+
 ## Docker Deployment
 
 The Streamlit app is containerized for deployment readiness.
