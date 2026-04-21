@@ -71,6 +71,10 @@ def draw_arrow(ax, start, end, text=None):
         )
 
 
+def box_center(xy, width, height):
+    return (xy[0] + width / 2, xy[1] + height / 2)
+
+
 def generate_architecture_diagram() -> Path:
     ensure_assets_dir()
     output = ASSETS_DIR / "system_architecture_diagram.png"
@@ -78,32 +82,48 @@ def generate_architecture_diagram() -> Path:
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     ax.axis("off")
+    width = 0.24
+    height = 0.12
+    xs = [0.06, 0.38, 0.70]
+    ys = [0.76, 0.50, 0.24]
 
-    draw_box(ax, (0.05, 0.72), 0.2, 0.12, "Raw Data\nGeneration + Weather", "#FFF4E5", "#D97706")
-    draw_box(ax, (0.33, 0.72), 0.2, 0.12, "DVC + AWS S3\nData Versioning", "#E8F5E9", "#2E7D32")
-    draw_box(ax, (0.61, 0.72), 0.28, 0.12, "Data Ingestion + Preprocessing\nFeature Engineering", "#E3F2FD", "#1565C0")
+    top_left = (xs[0], ys[0])
+    top_mid = (xs[1], ys[0])
+    top_right = (xs[2], ys[0])
+    mid_left = (xs[0], ys[1])
+    mid_mid = (xs[1], ys[1])
+    mid_right = (xs[2], ys[1])
+    bot_left = (xs[0], ys[2])
+    bot_mid = (xs[1], ys[2])
+    bot_right = (xs[2], ys[2])
 
-    draw_box(ax, (0.1, 0.46), 0.22, 0.12, "Model Training\nXGBoost", "#F3E5F5", "#7B1FA2")
-    draw_box(ax, (0.39, 0.46), 0.22, 0.12, "MLflow Tracking\nParams, Metrics, Artifacts", "#E0F7FA", "#00838F")
-    draw_box(ax, (0.68, 0.46), 0.2, 0.12, "Evaluation + Monitoring\nPlots + Drift Report", "#FCE4EC", "#C2185B")
+    draw_box(ax, top_left, width, height, "Raw Data\nGeneration + Weather", "#FFF4E5", "#D97706")
+    draw_box(ax, top_mid, width, height, "DVC + AWS S3\nData Versioning", "#E8F5E9", "#2E7D32")
+    draw_box(ax, top_right, width, height, "Data Ingestion + Preprocessing\nFeature Engineering", "#E3F2FD", "#1565C0")
 
-    draw_box(ax, (0.18, 0.2), 0.22, 0.12, "Streamlit App\nReal-time Prediction", "#E8F0FE", "#3367D6")
-    draw_box(ax, (0.46, 0.2), 0.16, 0.12, "Docker", "#F1F8E9", "#558B2F")
-    draw_box(ax, (0.68, 0.2), 0.2, 0.12, "AWS EC2\nCloud Deployment", "#FFF3E0", "#EF6C00")
+    draw_box(ax, mid_left, width, height, "Model Training\nXGBoost", "#F3E5F5", "#7B1FA2")
+    draw_box(ax, mid_mid, width, height, "MLflow Tracking\nParams, Metrics, Artifacts", "#E0F7FA", "#00838F")
+    draw_box(ax, mid_right, width, height, "Evaluation + Monitoring\nPlots + Drift Report", "#FCE4EC", "#C2185B")
 
-    draw_arrow(ax, (0.25, 0.78), (0.33, 0.78))
-    draw_arrow(ax, (0.53, 0.78), (0.61, 0.78))
-    draw_arrow(ax, (0.5, 0.72), (0.21, 0.58))
-    draw_arrow(ax, (0.61, 0.52), (0.61, 0.52))
-    draw_arrow(ax, (0.43, 0.52), (0.39, 0.52))
-    draw_arrow(ax, (0.61, 0.52), (0.68, 0.52))
-    draw_arrow(ax, (0.21, 0.46), (0.28, 0.32))
-    draw_arrow(ax, (0.5, 0.46), (0.54, 0.32))
-    draw_arrow(ax, (0.79, 0.46), (0.79, 0.32))
-    draw_arrow(ax, (0.4, 0.26), (0.46, 0.26))
-    draw_arrow(ax, (0.62, 0.26), (0.68, 0.26))
+    draw_box(ax, bot_left, width, height, "Streamlit App\nReal-time Prediction", "#E8F0FE", "#3367D6")
+    draw_box(ax, bot_mid, width, height, "Docker\nContainerized Deployment", "#F1F8E9", "#558B2F")
+    draw_box(ax, bot_right, width, height, "AWS EC2\nCloud Hosting", "#FFF3E0", "#EF6C00")
 
-    ax.text(0.5, 0.94, "System Architecture Diagram", ha="center", va="center", fontsize=16, weight="bold")
+    draw_arrow(ax, (top_left[0] + width, top_left[1] + height / 2), (top_mid[0], top_mid[1] + height / 2))
+    draw_arrow(ax, (top_mid[0] + width, top_mid[1] + height / 2), (top_right[0], top_right[1] + height / 2))
+
+    draw_arrow(ax, (top_right[0] + width / 2, top_right[1]), (mid_left[0] + width / 2, mid_left[1] + height))
+    draw_arrow(ax, (mid_left[0] + width, mid_left[1] + height / 2), (mid_mid[0], mid_mid[1] + height / 2))
+    draw_arrow(ax, (mid_mid[0] + width, mid_mid[1] + height / 2), (mid_right[0], mid_right[1] + height / 2))
+
+    draw_arrow(ax, (mid_left[0] + width / 2, mid_left[1]), (bot_left[0] + width / 2, bot_left[1] + height))
+    draw_arrow(ax, (mid_mid[0] + width / 2, mid_mid[1]), (bot_mid[0] + width / 2, bot_mid[1] + height))
+    draw_arrow(ax, (mid_right[0] + width / 2, mid_right[1]), (bot_right[0] + width / 2, bot_right[1] + height))
+
+    draw_arrow(ax, (bot_left[0] + width, bot_left[1] + height / 2), (bot_mid[0], bot_mid[1] + height / 2))
+    draw_arrow(ax, (bot_mid[0] + width, bot_mid[1] + height / 2), (bot_right[0], bot_right[1] + height / 2))
+
+    ax.text(0.5, 0.95, "System Architecture Diagram", ha="center", va="center", fontsize=16, weight="bold")
     fig.tight_layout()
     fig.savefig(output, dpi=200, bbox_inches="tight")
     plt.close(fig)
@@ -113,7 +133,7 @@ def generate_architecture_diagram() -> Path:
 def generate_pipeline_flow_diagram() -> Path:
     ensure_assets_dir()
     output = ASSETS_DIR / "pipeline_flow_diagram.png"
-    fig, ax = plt.subplots(figsize=(8, 11))
+    fig, ax = plt.subplots(figsize=(9, 11))
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     ax.axis("off")
@@ -129,14 +149,17 @@ def generate_pipeline_flow_diagram() -> Path:
         ("Docker + EC2", "#FFF3E0", "#EF6C00"),
     ]
 
-    y = 0.88
+    width = 0.54
+    height = 0.075
+    x = 0.23
+    y = 0.87
     for index, (label, fill, edge) in enumerate(steps):
-        draw_box(ax, (0.25, y), 0.5, 0.08, label, fill, edge, fontsize=11)
+        draw_box(ax, (x, y), width, height, label, fill, edge, fontsize=11)
         if index < len(steps) - 1:
-            draw_arrow(ax, (0.5, y), (0.5, y - 0.06))
-        y -= 0.12
+            draw_arrow(ax, (x + width / 2, y), (x + width / 2, y - 0.05))
+        y -= 0.11
 
-    ax.text(0.5, 0.97, "End-to-End Pipeline Flow", ha="center", va="center", fontsize=16, weight="bold")
+    ax.text(0.5, 0.965, "End-to-End Pipeline Flow", ha="center", va="center", fontsize=16, weight="bold")
     fig.tight_layout()
     fig.savefig(output, dpi=200, bbox_inches="tight")
     plt.close(fig)
@@ -151,19 +174,29 @@ def generate_methodology_diagram() -> Path:
     ax.set_ylim(0, 1)
     ax.axis("off")
 
-    draw_box(ax, (0.05, 0.68), 0.25, 0.15, "Data Handling\nLoad, merge, clean,\ncreate time features", "#E3F2FD", "#1565C0")
-    draw_box(ax, (0.375, 0.68), 0.25, 0.15, "Model Development\nTrain/test split,\nXGBoost training", "#F3E5F5", "#7B1FA2")
-    draw_box(ax, (0.70, 0.68), 0.25, 0.15, "Experiment Strategy\nDVC + MLflow + params.yaml", "#E8F5E9", "#2E7D32")
+    top_width = 0.24
+    top_height = 0.15
+    bottom_width = 0.24
+    bottom_height = 0.15
+    top_y = 0.66
+    bottom_y = 0.30
+    top_xs = [0.06, 0.38, 0.70]
+    bottom_xs = [0.06, 0.38, 0.70]
 
-    draw_box(ax, (0.12, 0.34), 0.22, 0.14, "Evaluation\nRMSE, MAE, R2,\nplots", "#FCE4EC", "#C2185B")
-    draw_box(ax, (0.39, 0.34), 0.22, 0.14, "Monitoring\nDrift report,\npipeline logs", "#E0F7FA", "#00838F")
-    draw_box(ax, (0.66, 0.34), 0.22, 0.14, "Deployment\nStreamlit, Docker,\nAWS EC2", "#FFF3E0", "#EF6C00")
+    draw_box(ax, (top_xs[0], top_y), top_width, top_height, "Data Handling\nLoad, merge, clean,\ncreate time features", "#E3F2FD", "#1565C0")
+    draw_box(ax, (top_xs[1], top_y), top_width, top_height, "Model Development\nTrain/test split,\nXGBoost training", "#F3E5F5", "#7B1FA2")
+    draw_box(ax, (top_xs[2], top_y), top_width, top_height, "Experiment Strategy\nDVC + MLflow + params.yaml", "#E8F5E9", "#2E7D32")
 
-    draw_arrow(ax, (0.30, 0.75), (0.375, 0.75))
-    draw_arrow(ax, (0.625, 0.75), (0.70, 0.75))
-    draw_arrow(ax, (0.175, 0.68), (0.23, 0.48))
-    draw_arrow(ax, (0.50, 0.68), (0.50, 0.48))
-    draw_arrow(ax, (0.825, 0.68), (0.77, 0.48))
+    draw_box(ax, (bottom_xs[0], bottom_y), bottom_width, bottom_height, "Evaluation\nRMSE, MAE, R2,\nplots", "#FCE4EC", "#C2185B")
+    draw_box(ax, (bottom_xs[1], bottom_y), bottom_width, bottom_height, "Monitoring\nDrift report,\npipeline logs", "#E0F7FA", "#00838F")
+    draw_box(ax, (bottom_xs[2], bottom_y), bottom_width, bottom_height, "Deployment\nStreamlit, Docker,\nAWS EC2", "#FFF3E0", "#EF6C00")
+
+    draw_arrow(ax, (top_xs[0] + top_width, top_y + top_height / 2), (top_xs[1], top_y + top_height / 2))
+    draw_arrow(ax, (top_xs[1] + top_width, top_y + top_height / 2), (top_xs[2], top_y + top_height / 2))
+
+    draw_arrow(ax, (top_xs[0] + top_width / 2, top_y), (bottom_xs[0] + bottom_width / 2, bottom_y + bottom_height))
+    draw_arrow(ax, (top_xs[1] + top_width / 2, top_y), (bottom_xs[1] + bottom_width / 2, bottom_y + bottom_height))
+    draw_arrow(ax, (top_xs[2] + top_width / 2, top_y), (bottom_xs[2] + bottom_width / 2, bottom_y + bottom_height))
 
     ax.text(0.5, 0.93, "Project Methodology Diagram", ha="center", va="center", fontsize=16, weight="bold")
     fig.tight_layout()
@@ -597,8 +630,13 @@ def write_report():
     appendix = document.add_section(WD_SECTION.NEW_PAGE)
     add_page_number(appendix)
 
-    document.save(OUTPUT)
-    print(f"Generated {OUTPUT}")
+    try:
+        document.save(OUTPUT)
+        final_output = OUTPUT
+    except PermissionError:
+        final_output = REPORTS_DIR / "Solar_Power_MLOps_Project_Report_Updated.docx"
+        document.save(final_output)
+    print(f"Generated {final_output}")
 
 
 if __name__ == "__main__":
