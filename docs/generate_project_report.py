@@ -563,6 +563,28 @@ def architecture_points():
     ]
 
 
+def add_contents_block(document: Document):
+    add_section_heading(document, "Report Outline")
+    for item in [
+        "1. Abstract",
+        "2. Introduction",
+        "3. Literature Review",
+        "4. System Architecture",
+        "5. Pipeline Flow",
+        "6. Tools and Technologies Used",
+        "7. Methodology",
+        "8. Experiments and Results",
+        "9. Comparative Study",
+        "10. Deployment",
+        "11. Monitoring and Maintenance",
+        "12. Conclusion and Future Work",
+        "13. References",
+        "14. GitHub Repository",
+        "15. Appendix",
+    ]:
+        add_bullet(document, item)
+
+
 def write_report():
     metrics = load_json(REPORTS_DIR / "metrics.json")
     drift = load_json(REPORTS_DIR / "drift_report.json")
@@ -583,6 +605,8 @@ def write_report():
     add_cover_block(document)
 
     document.add_page_break()
+    add_contents_block(document)
+    add_section_divider(document)
 
     add_section_heading(document, "Abstract")
     add_paragraph(
@@ -592,6 +616,20 @@ def write_report():
         f"The final XGBoost regression model predicts AC_POWER and achieved RMSE {metrics['RMSE']}, MAE {metrics['MAE']}, and R2 Score {metrics['R2_Score']}. "
         "A Streamlit application was built for real-time inference, drift monitoring was implemented for governance, and the deployed Dockerized application was verified on an EC2 Ubuntu instance."
     )
+    add_section_heading(document, "Executive Summary", 2)
+    add_table(
+        document,
+        ["Area", "Summary"],
+        [
+            ["Business Use Case", "Forecast solar AC power generation from weather and time features."],
+            ["Model", "XGBoost Regressor trained on six forecasting-oriented input features."],
+            ["MLOps Stack", "DVC, AWS S3, MLflow, GitHub Actions, Streamlit, Docker, AWS EC2."],
+            ["Best Result", f"RMSE {metrics['RMSE']}, MAE {metrics['MAE']}, R2 {metrics['R2_Score']}."],
+            ["Deployment Mode", "Real-time web application deployed on AWS EC2."],
+            ["Monitoring", "Drift report, pipeline logs, and MLflow experiment history."],
+        ],
+    )
+    add_section_divider(document)
 
     add_section_heading(document, "Introduction")
     add_section_heading(document, "Problem Statement", 2)
@@ -617,6 +655,13 @@ def write_report():
         "The scope of this project includes raw data versioning, data preprocessing, model training, evaluation, monitoring, deployment, and governance documentation. "
         "The project focuses on a single plant dataset and a real-time prediction interface. It does not yet include HTTPS, automated production deployment, or advanced retraining orchestration."
     )
+    add_section_heading(document, "Project Significance", 2)
+    add_paragraph(
+        document,
+        "This project is significant because it demonstrates that a machine learning model can be treated as a full operational system rather than an isolated notebook artifact. "
+        "It combines forecasting accuracy with reproducibility, deployment readiness, cloud execution, and governance practices expected in modern MLOps workflows."
+    )
+    add_section_divider(document)
 
     add_section_heading(document, "Literature Review")
     add_paragraph(
@@ -634,6 +679,7 @@ def write_report():
         "This project adopts that broader MLOps perspective by combining a forecasting model with DVC, MLflow, GitHub Actions, Docker, Streamlit, AWS S3, and AWS EC2. "
         "The result is not only a trained model but a complete pipeline that is reproducible, auditable, deployable, and easier to maintain."
     )
+    add_section_divider(document)
 
     add_section_heading(document, "System Architecture")
     add_section_heading(document, "Overall Architecture", 2)
@@ -645,6 +691,7 @@ def write_report():
         "The architecture separates responsibilities across data, modeling, experimentation, deployment, and governance. "
         "This separation makes the project easier to debug, extend, document, and evaluate against the Essentials of MLOps rubric."
     )
+    add_section_divider(document)
 
     add_section_heading(document, "Pipeline Flow")
     add_image(document, pipeline_diagram, "Figure B. End-to-End Pipeline Flow Diagram", width=5.5)
@@ -666,6 +713,7 @@ def write_report():
         "CI/CD validation and governance",
     ]:
         add_bullet(document, step)
+    add_section_divider(document)
 
     add_section_heading(document, "Tools and Technologies Used")
     add_table(
@@ -683,6 +731,13 @@ def write_report():
             ["Governance and Logging", "Python logging, governance.md, Git", "Execution audit trail and process controls"],
         ],
     )
+    add_section_heading(document, "Technology Selection Justification", 2)
+    add_paragraph(
+        document,
+        "The technology stack was chosen to satisfy both technical practicality and rubric coverage. "
+        "DVC and AWS S3 support data lineage, MLflow supports experiment accountability, GitHub Actions validates the pipeline in CI, Streamlit provides a fast real-time interface, Docker standardizes execution, and AWS EC2 offers an understandable and cost-conscious deployment path."
+    )
+    add_section_divider(document)
 
     add_section_heading(document, "Methodology")
     add_image(document, methodology_diagram, "Figure C. Methodology Diagram", width=6.2)
@@ -696,6 +751,15 @@ def write_report():
         document,
         "The preprocessing stage converts timestamps, engineers HOUR, DAY, and MONTH features, removes null values, and writes the final dataset to data/processed/final_data.csv. "
         "Although the raw merged data contains other generation-related columns, the final forecasting model uses only weather and time features in order to avoid target leakage."
+    )
+    add_table(
+        document,
+        ["Dataset", "Rows", "Columns", "Role"],
+        [
+            ["Plant_1_Generation_Data.csv", "68,778", "7", "Historical generation measurements"],
+            ["Plant_1_Weather_Sensor_Data.csv", "3,182", "6", "Environmental context and irradiation"],
+            ["final_data.csv", "68,774", "10", "Merged and engineered modeling dataset"],
+        ],
     )
     add_section_heading(document, "Model Development", 2)
     add_paragraph(
@@ -713,6 +777,13 @@ def write_report():
         "The project uses DVC to track raw data files and store them in an S3 remote. This ensures that raw data changes are reproducible and can be restored using dvc pull. "
         "MLflow is used to record experiment metadata, selected features, hyperparameters, train-test counts, model artifact, evaluation metrics, plots, and monitoring outputs."
     )
+    add_section_heading(document, "Reproducibility Strategy", 2)
+    add_paragraph(
+        document,
+        "Reproducibility is enforced through version-controlled code in Git, raw-data lineage in DVC, experiment history in MLflow, centralized configuration in params.yaml, and containerization in Docker. "
+        "This combination reduces ambiguity when rerunning experiments and makes the project easier to defend during evaluation."
+    )
+    add_section_divider(document)
 
     add_section_heading(document, "Experiments and Results")
     add_section_heading(document, "Experimental Setup", 2)
@@ -745,6 +816,12 @@ def write_report():
         "The final model achieved a high R2 score while still relying only on weather and time features. This makes the forecasting setup more realistic than a model that uses generation-derived variables such as DC_POWER. "
         "Residual analysis and actual-versus-predicted plots show that the model captures the target trend effectively."
     )
+    add_section_heading(document, "Interpretation of Results", 2)
+    add_paragraph(
+        document,
+        "These results indicate that the selected feature set preserves strong predictive signal even after removing leakage-prone variables. "
+        "The model therefore remains both accurate and defensible as a true forecasting solution rather than an overfitted shortcut."
+    )
 
     add_section_heading(document, "Result Visualizations", 2)
     for path, caption in [
@@ -756,6 +833,7 @@ def write_report():
         (REPORTS_DIR / "hourly_power.png", "Figure 6. Average Solar Power by Hour"),
     ]:
         add_image(document, path, caption)
+    add_section_divider(document)
 
     add_section_heading(document, "Comparative Study")
     add_paragraph(
@@ -772,6 +850,7 @@ def write_report():
             ["Implemented MLOps version", "Tracks data, experiments, deployment, and monitoring", "Future work can add automated retraining"],
         ],
     )
+    add_section_divider(document)
 
     add_section_heading(document, "Deployment")
     add_section_heading(document, "Deployment Strategy", 2)
@@ -797,6 +876,13 @@ def write_report():
             ["Public URL", DEPLOYED_URL],
         ],
     )
+    add_section_heading(document, "Deployment Rationale", 2)
+    add_paragraph(
+        document,
+        "AWS EC2 was selected because it provides a simpler and more cost-aware deployment route than a fully managed serving platform for a mini project. "
+        "This decision still satisfies the cloud deployment requirement while remaining easy to explain, demonstrate, and control."
+    )
+    add_section_divider(document)
 
     add_section_heading(document, "Monitoring and Maintenance")
     add_paragraph(
@@ -823,6 +909,13 @@ def write_report():
         document,
         "Maintenance strategy for the project includes checking logs in logs/pipeline.log, reviewing MLflow runs, observing drift behavior, and retraining the model if drift or performance degradation becomes significant."
     )
+    add_section_heading(document, "Governance Controls", 2)
+    add_paragraph(
+        document,
+        "Governance is supported through several linked controls: DVC for dataset traceability, MLflow for experiment auditability, GitHub Actions for automated validation, Python logging for execution history, and drift reporting for operational oversight. "
+        "These controls improve transparency, accountability, and long-term maintainability."
+    )
+    add_section_divider(document)
 
     add_section_heading(document, "Conclusion and Future Work")
     add_paragraph(
@@ -834,17 +927,19 @@ def write_report():
         document,
         "Future work can include adding HTTPS and custom domain support for the deployed application, setting up automated deployment from GitHub Actions to AWS, introducing more advanced statistical drift detection, and implementing a retraining pipeline triggered by drift or performance decay."
     )
+    add_section_divider(document)
 
     add_section_heading(document, "References")
-    for ref in [
-        "[1] T. Chen and C. Guestrin, “XGBoost: A Scalable Tree Boosting System,” Proc. 22nd ACM SIGKDD Int. Conf. Knowledge Discovery and Data Mining, 2016, pp. 785-794.",
-        "[2] MLflow, “MLflow Documentation.” [Online]. Available: https://mlflow.org/docs/latest/index.html",
-        "[3] DVC, “Data Version Control Documentation.” [Online]. Available: https://dvc.org/doc",
-        "[4] Docker, “Docker Documentation.” [Online]. Available: https://docs.docker.com/",
-        "[5] Streamlit, “Streamlit Documentation.” [Online]. Available: https://docs.streamlit.io/",
-        "[6] GitHub, “GitHub Actions Documentation.” [Online]. Available: https://docs.github.com/actions",
-        "[7] Amazon Web Services, “Amazon EC2 Documentation.” [Online]. Available: https://docs.aws.amazon.com/ec2/",
-    ]:
+    references = [
+        '[1] T. Chen and C. Guestrin, "XGBoost: A Scalable Tree Boosting System," Proc. 22nd ACM SIGKDD Int. Conf. Knowledge Discovery and Data Mining, 2016, pp. 785-794.',
+        '[2] MLflow, "MLflow Documentation." [Online]. Available: https://mlflow.org/docs/latest/index.html',
+        '[3] DVC, "Data Version Control Documentation." [Online]. Available: https://dvc.org/doc',
+        '[4] Docker, "Docker Documentation." [Online]. Available: https://docs.docker.com/',
+        '[5] Streamlit, "Streamlit Documentation." [Online]. Available: https://docs.streamlit.io/',
+        '[6] GitHub, "GitHub Actions Documentation." [Online]. Available: https://docs.github.com/actions',
+        '[7] Amazon Web Services, "Amazon EC2 Documentation." [Online]. Available: https://docs.aws.amazon.com/ec2/',
+    ]
+    for ref in references:
         add_paragraph(document, ref)
 
     add_section_heading(document, "GitHub Repository")
@@ -853,6 +948,22 @@ def write_report():
         document,
         "The repository contains the full project implementation, including source code, pipeline modules, configuration files, DVC pointers, MLflow tracking outputs, governance documentation, CI workflow, Docker files, and deployment instructions."
     )
+    add_section_heading(document, "Rubric Coverage Summary", 2)
+    add_table(
+        document,
+        ["Rubric Area", "Implementation Evidence"],
+        [
+            ["Problem Definition & ML Use Case", "Solar AC power forecasting with a clear regression objective"],
+            ["Data Versioning & Experiment Tracking", "DVC + AWS S3 + MLflow"],
+            ["Modular Pipeline Design", "Separate ingestion, preprocessing, training, evaluation, monitoring modules"],
+            ["CI/CD", "GitHub Actions workflow"],
+            ["Model Deployment Strategy", "Real-time Streamlit application"],
+            ["Cloud Deployment & Infrastructure", "AWS EC2, AWS S3, Docker"],
+            ["Monitoring, Logging & Governance", "Drift report, pipeline logs, governance document"],
+            ["GitHub Repository & Reproducibility", "Structured repo, README, Docker, params, DVC, CI"],
+        ],
+    )
+    add_section_divider(document)
 
     add_section_heading(document, "Appendix: Suggested Screenshots for Final Submission")
     for item in [
