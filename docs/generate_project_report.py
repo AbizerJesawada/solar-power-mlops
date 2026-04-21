@@ -10,14 +10,166 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Inches, Pt
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from matplotlib.patches import FancyBboxPatch
 
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORTS_DIR = ROOT / "reports"
 OUTPUT = REPORTS_DIR / "Solar_Power_MLOps_Project_Report.docx"
+ASSETS_DIR = REPORTS_DIR / "report_assets"
 
 REPO_URL = "https://github.com/AbizerJesawada/solar-power-mlops"
 DEPLOYED_URL = "http://65.1.133.227:8501"
+
+
+def ensure_assets_dir():
+    ASSETS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def draw_box(ax, xy, width, height, text, facecolor="#E8F0FE", edgecolor="#3367D6", fontsize=10):
+    box = FancyBboxPatch(
+        xy,
+        width,
+        height,
+        boxstyle="round,pad=0.02,rounding_size=0.02",
+        linewidth=1.5,
+        edgecolor=edgecolor,
+        facecolor=facecolor,
+    )
+    ax.add_patch(box)
+    ax.text(
+        xy[0] + width / 2,
+        xy[1] + height / 2,
+        text,
+        ha="center",
+        va="center",
+        fontsize=fontsize,
+        weight="bold",
+        wrap=True,
+    )
+
+
+def draw_arrow(ax, start, end, text=None):
+    ax.annotate(
+        "",
+        xy=end,
+        xytext=start,
+        arrowprops=dict(arrowstyle="->", lw=1.8, color="#555555"),
+    )
+    if text:
+        ax.text(
+            (start[0] + end[0]) / 2,
+            (start[1] + end[1]) / 2 + 0.02,
+            text,
+            fontsize=9,
+            ha="center",
+            va="center",
+            color="#333333",
+        )
+
+
+def generate_architecture_diagram() -> Path:
+    ensure_assets_dir()
+    output = ASSETS_DIR / "system_architecture_diagram.png"
+    fig, ax = plt.subplots(figsize=(12, 7))
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.axis("off")
+
+    draw_box(ax, (0.05, 0.72), 0.2, 0.12, "Raw Data\nGeneration + Weather", "#FFF4E5", "#D97706")
+    draw_box(ax, (0.33, 0.72), 0.2, 0.12, "DVC + AWS S3\nData Versioning", "#E8F5E9", "#2E7D32")
+    draw_box(ax, (0.61, 0.72), 0.28, 0.12, "Data Ingestion + Preprocessing\nFeature Engineering", "#E3F2FD", "#1565C0")
+
+    draw_box(ax, (0.1, 0.46), 0.22, 0.12, "Model Training\nXGBoost", "#F3E5F5", "#7B1FA2")
+    draw_box(ax, (0.39, 0.46), 0.22, 0.12, "MLflow Tracking\nParams, Metrics, Artifacts", "#E0F7FA", "#00838F")
+    draw_box(ax, (0.68, 0.46), 0.2, 0.12, "Evaluation + Monitoring\nPlots + Drift Report", "#FCE4EC", "#C2185B")
+
+    draw_box(ax, (0.18, 0.2), 0.22, 0.12, "Streamlit App\nReal-time Prediction", "#E8F0FE", "#3367D6")
+    draw_box(ax, (0.46, 0.2), 0.16, 0.12, "Docker", "#F1F8E9", "#558B2F")
+    draw_box(ax, (0.68, 0.2), 0.2, 0.12, "AWS EC2\nCloud Deployment", "#FFF3E0", "#EF6C00")
+
+    draw_arrow(ax, (0.25, 0.78), (0.33, 0.78))
+    draw_arrow(ax, (0.53, 0.78), (0.61, 0.78))
+    draw_arrow(ax, (0.5, 0.72), (0.21, 0.58))
+    draw_arrow(ax, (0.61, 0.52), (0.61, 0.52))
+    draw_arrow(ax, (0.43, 0.52), (0.39, 0.52))
+    draw_arrow(ax, (0.61, 0.52), (0.68, 0.52))
+    draw_arrow(ax, (0.21, 0.46), (0.28, 0.32))
+    draw_arrow(ax, (0.5, 0.46), (0.54, 0.32))
+    draw_arrow(ax, (0.79, 0.46), (0.79, 0.32))
+    draw_arrow(ax, (0.4, 0.26), (0.46, 0.26))
+    draw_arrow(ax, (0.62, 0.26), (0.68, 0.26))
+
+    ax.text(0.5, 0.94, "System Architecture Diagram", ha="center", va="center", fontsize=16, weight="bold")
+    fig.tight_layout()
+    fig.savefig(output, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    return output
+
+
+def generate_pipeline_flow_diagram() -> Path:
+    ensure_assets_dir()
+    output = ASSETS_DIR / "pipeline_flow_diagram.png"
+    fig, ax = plt.subplots(figsize=(8, 11))
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.axis("off")
+
+    steps = [
+        ("Data Versioning\n(DVC + S3)", "#E8F5E9", "#2E7D32"),
+        ("data_ingestion.py", "#FFF4E5", "#D97706"),
+        ("preprocessing.py", "#E3F2FD", "#1565C0"),
+        ("train.py", "#F3E5F5", "#7B1FA2"),
+        ("evaluate.py", "#FCE4EC", "#C2185B"),
+        ("monitoring.py", "#E0F7FA", "#00838F"),
+        ("app.py (Streamlit)", "#E8F0FE", "#3367D6"),
+        ("Docker + EC2", "#FFF3E0", "#EF6C00"),
+    ]
+
+    y = 0.88
+    for index, (label, fill, edge) in enumerate(steps):
+        draw_box(ax, (0.25, y), 0.5, 0.08, label, fill, edge, fontsize=11)
+        if index < len(steps) - 1:
+            draw_arrow(ax, (0.5, y), (0.5, y - 0.06))
+        y -= 0.12
+
+    ax.text(0.5, 0.97, "End-to-End Pipeline Flow", ha="center", va="center", fontsize=16, weight="bold")
+    fig.tight_layout()
+    fig.savefig(output, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    return output
+
+
+def generate_methodology_diagram() -> Path:
+    ensure_assets_dir()
+    output = ASSETS_DIR / "methodology_diagram.png"
+    fig, ax = plt.subplots(figsize=(12, 7))
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.axis("off")
+
+    draw_box(ax, (0.05, 0.68), 0.25, 0.15, "Data Handling\nLoad, merge, clean,\ncreate time features", "#E3F2FD", "#1565C0")
+    draw_box(ax, (0.375, 0.68), 0.25, 0.15, "Model Development\nTrain/test split,\nXGBoost training", "#F3E5F5", "#7B1FA2")
+    draw_box(ax, (0.70, 0.68), 0.25, 0.15, "Experiment Strategy\nDVC + MLflow + params.yaml", "#E8F5E9", "#2E7D32")
+
+    draw_box(ax, (0.12, 0.34), 0.22, 0.14, "Evaluation\nRMSE, MAE, R2,\nplots", "#FCE4EC", "#C2185B")
+    draw_box(ax, (0.39, 0.34), 0.22, 0.14, "Monitoring\nDrift report,\npipeline logs", "#E0F7FA", "#00838F")
+    draw_box(ax, (0.66, 0.34), 0.22, 0.14, "Deployment\nStreamlit, Docker,\nAWS EC2", "#FFF3E0", "#EF6C00")
+
+    draw_arrow(ax, (0.30, 0.75), (0.375, 0.75))
+    draw_arrow(ax, (0.625, 0.75), (0.70, 0.75))
+    draw_arrow(ax, (0.175, 0.68), (0.23, 0.48))
+    draw_arrow(ax, (0.50, 0.68), (0.50, 0.48))
+    draw_arrow(ax, (0.825, 0.68), (0.77, 0.48))
+
+    ax.text(0.5, 0.93, "Project Methodology Diagram", ha="center", va="center", fontsize=16, weight="bold")
+    fig.tight_layout()
+    fig.savefig(output, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    return output
 
 
 def add_page_number(section):
@@ -120,6 +272,9 @@ def architecture_points():
 def write_report():
     metrics = load_json(REPORTS_DIR / "metrics.json")
     drift = load_json(REPORTS_DIR / "drift_report.json")
+    architecture_diagram = generate_architecture_diagram()
+    pipeline_diagram = generate_pipeline_flow_diagram()
+    methodology_diagram = generate_methodology_diagram()
 
     document = Document()
     set_base_style(document)
@@ -207,6 +362,7 @@ def write_report():
 
     add_section_heading(document, "System Architecture")
     add_section_heading(document, "Overall Architecture", 2)
+    add_image(document, architecture_diagram, "Figure A. System Architecture Diagram", width=6.2)
     for point in architecture_points():
         add_bullet(document, point)
     add_paragraph(
@@ -216,6 +372,7 @@ def write_report():
     )
 
     add_section_heading(document, "Pipeline Flow")
+    add_image(document, pipeline_diagram, "Figure B. End-to-End Pipeline Flow Diagram", width=5.5)
     add_paragraph(
         document,
         "The end-to-end pipeline begins with DVC-managed raw CSV files. The generation dataset and weather dataset are ingested, cleaned, merged, and transformed into a processed modeling dataset. "
@@ -253,6 +410,7 @@ def write_report():
     )
 
     add_section_heading(document, "Methodology")
+    add_image(document, methodology_diagram, "Figure C. Methodology Diagram", width=6.2)
     add_section_heading(document, "Data Handling", 2)
     add_paragraph(
         document,
