@@ -2,6 +2,7 @@
 .github
 .dvc/cache
 .dvc/tmp
+.dvc/config.local
 mlops
 venv
 __pycache__
@@ -12,3 +13,11 @@ __pycache__
 .pytest_cache
 .mypy_cache
 ci_mlruns
+mlruns
+logs
+docs
+data
+__pycache__/
+*.docx
+*.ipynb
+mlflow.db

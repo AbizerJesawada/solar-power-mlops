@@ -3,6 +3,8 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PIP_NO_CACHE_DIR=1
+ENV STREAMLIT_SERVER_HEADLESS=true
+ENV STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
 
 WORKDIR /app
 
@@ -14,7 +16,9 @@ COPY docker-requirements.txt .
 RUN pip install --upgrade pip \
     && pip install -r docker-requirements.txt
 
-COPY . .
+COPY app.py params.yaml ./
+COPY models ./models
+COPY reports ./reports
 
 EXPOSE 8501
 
