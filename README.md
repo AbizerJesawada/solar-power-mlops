@@ -3,7 +3,8 @@
 This project builds an end-to-end machine learning pipeline to forecast solar
 power generation from weather and time-based features. The pipeline uses DVC for
 data versioning, MLflow for experiment tracking, XGBoost for regression,
-GitHub Actions for CI, and Streamlit for an interactive prediction interface.
+GitHub Actions for CI/CD, Docker for containerized deployment, and Streamlit
+for an interactive operations-style prediction interface.
 
 ## Problem Statement
 
@@ -91,7 +92,8 @@ solar-power-mlops/
    and artifacts to MLflow.
 5. `monitoring.py` creates a drift report by comparing reference and current
    feature distributions.
-6. `app.py` provides a Streamlit interface for real-time prediction.
+6. `app.py` provides a professional Streamlit dashboard for real-time
+   prediction, model evaluation, and drift monitoring.
 
 Run the complete pipeline:
 
@@ -184,7 +186,16 @@ Open:
 http://localhost:8501
 ```
 
-The app accepts weather and time inputs and returns:
+The app includes:
+
+- A polished dashboard-style forecasting interface
+- Scenario-based weather and time inputs
+- Predicted AC power output
+- Evaluation metric cards
+- Drift monitoring summaries
+- Validation, analytics, and architecture tabs
+
+The prediction workflow returns:
 
 ```text
 Predicted AC Power
@@ -332,9 +343,9 @@ python -m streamlit run app.py
 | Problem Definition & ML Use Case | Solar AC power forecasting regression problem |
 | Data Versioning & Experiment Tracking | DVC with S3 remote, MLflow experiment tracking |
 | Modular Pipeline Design | Separate ingestion, preprocessing, training, evaluation, monitoring, visualization modules |
-| CI/CD Implementation | GitHub Actions runs DVC pull, training, evaluation, app validation, and artifact upload |
+| CI/CD Implementation | GitHub Actions runs CI validation and an EC2 deployment workflow for the Dockerized app |
 | Model Deployment Strategy | Streamlit prediction app for real-time demo |
-| Cloud Deployment & Infrastructure | AWS S3 used for DVC remote and Dockerized Streamlit app deployed on AWS EC2 |
+| Cloud Deployment & Infrastructure | AWS S3 used for DVC remote and Dockerized Streamlit app deployed on AWS EC2 with automated GitHub Actions rollout |
 | Monitoring, Logging & Governance | MLflow logging, pipeline logs, drift report, and governance document implemented |
 | GitHub Repository & Reproducibility | Git repo, requirements, DVC pointers, pipeline commands |
 | Technical Project Report | This README provides base material for report |
@@ -363,7 +374,8 @@ logging, CI/CD controls, deployment governance, and security notes.
 
 ## Docker Deployment
 
-The Streamlit app is containerized for deployment readiness.
+The Streamlit app is containerized for deployment readiness with a streamlined
+runtime image.
 
 Files:
 
@@ -382,7 +394,14 @@ docker build -t solar-power-mlops .
 Run the container:
 
 ```powershell
-docker run -p 8501:8501 solar-power-mlops
+docker run -d -p 8501:8501 --name solar-app solar-power-mlops
+```
+
+Re-run after code changes:
+
+```powershell
+docker rm -f solar-app
+docker run -d -p 8501:8501 --name solar-app solar-power-mlops
 ```
 
 Open:
@@ -391,12 +410,12 @@ Open:
 http://localhost:8501
 ```
 
-This containerization makes the project easier to deploy on AWS services such
-as ECS, EC2, App Runner, or ECR-based workflows.
+The Docker image is optimized to copy only runtime assets required by the app,
+which keeps the deployment image smaller and more focused for EC2 hosting.
 
 ## AWS EC2 Deployment
 
-The Streamlit prediction app was deployed on an AWS EC2 Ubuntu instance using
+The Streamlit prediction app is deployed on an AWS EC2 Ubuntu instance using
 Docker.
 
 Deployment summary:
@@ -425,18 +444,31 @@ sudo usermod -aG docker ubuntu
 git clone https://github.com/AbizerJesawada/solar-power-mlops.git
 cd solar-power-mlops
 docker build -t solar-power-mlops .
-docker run -d -p 8501:8501 --name solar-app solar-power-mlops
+docker run -d --restart unless-stopped -p 8501:8501 --name solar-app solar-power-mlops
 docker ps
 ```
 
-If you enable the deployment workflow, GitHub Actions can perform the update
-steps automatically after pushes to `main`, so the EC2 instance stays in sync
-with the repository without a manual SSH session.
+Update commands used on EC2:
+
+```bash
+cd ~/solar-power-mlops
+git pull origin main
+docker rm -f solar-app || true
+docker build -t solar-power-mlops .
+docker run -d --restart unless-stopped -p 8501:8501 --name solar-app solar-power-mlops
+docker ps
+```
+
+GitHub Actions deployment status:
+
+- The `deploy-ec2.yml` workflow is configured and working
+- Pushes to `main` can automatically rebuild and redeploy the app on EC2
+- Repository secrets used: `EC2_HOST`, `EC2_USER`, `EC2_SSH_PRIVATE_KEY`
 
 Deployed app URL:
 
 ```text
-http://65.1.133.227:8501
+http://13.201.92.66:8501
 ```
 
 Note: The EC2 instance should be stopped when not in use to avoid unnecessary
@@ -445,4 +477,5 @@ AWS charges.
 ## Future Work
 
 - Add HTTPS/domain support for the deployed app.
-- Add automated deployment from GitHub Actions to AWS.
+- Rotate the EC2 deployment SSH key and tighten secret management.
+- Add health checks, reverse proxying, and process monitoring for production hardening.
