@@ -14,6 +14,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,9 +25,117 @@ ASSETS_DIR = REPORTS_DIR / "report_assets"
 REPO_URL = "https://github.com/AbizerJesawada/solar-power-mlops"
 DEPLOYED_URL = "http://65.1.133.227:8501"
 
+FONT_REGULAR_CANDIDATES = [
+    Path("C:/Windows/Fonts/aptos.ttf"),
+    Path("C:/Windows/Fonts/segoeui.ttf"),
+    Path("C:/Windows/Fonts/calibri.ttf"),
+    Path("C:/Windows/Fonts/arial.ttf"),
+]
+
+FONT_BOLD_CANDIDATES = [
+    Path("C:/Windows/Fonts/aptos-bold.ttf"),
+    Path("C:/Windows/Fonts/segoeuib.ttf"),
+    Path("C:/Windows/Fonts/calibrib.ttf"),
+    Path("C:/Windows/Fonts/arialbd.ttf"),
+]
+
 
 def ensure_assets_dir():
     ASSETS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def get_font(size: int, *, bold: bool = False):
+    candidates = FONT_BOLD_CANDIDATES if bold else FONT_REGULAR_CANDIDATES
+    for candidate in candidates:
+        if candidate.exists():
+            return ImageFont.truetype(str(candidate), size)
+    return ImageFont.load_default()
+
+
+def text_box(draw: ImageDraw.ImageDraw, text: str, font, max_width: int):
+    words = text.split()
+    lines = []
+    current = ""
+    for word in words:
+        test = f"{current} {word}".strip()
+        if draw.textbbox((0, 0), test, font=font)[2] <= max_width:
+            current = test
+        else:
+            if current:
+                lines.append(current)
+            current = word
+    if current:
+        lines.append(current)
+    return lines
+
+
+def draw_multiline_center(draw, box, text, font, fill, spacing=8):
+    lines = []
+    for raw in text.split("\n"):
+        lines.extend(text_box(draw, raw, font, box[2] - box[0] - 28))
+    line_heights = []
+    for line in lines:
+        bbox = draw.textbbox((0, 0), line, font=font)
+        line_heights.append(bbox[3] - bbox[1])
+    total_height = sum(line_heights) + spacing * max(0, len(lines) - 1)
+    y = box[1] + ((box[3] - box[1]) - total_height) / 2
+    for idx, line in enumerate(lines):
+        bbox = draw.textbbox((0, 0), line, font=font)
+        line_width = bbox[2] - bbox[0]
+        draw.text(
+            (box[0] + ((box[2] - box[0]) - line_width) / 2, y),
+            line,
+            font=font,
+            fill=fill,
+        )
+        y += line_heights[idx] + spacing
+
+
+def draw_card(base, box, title, fill, edge, icon_fill=None):
+    shadow = Image.new("RGBA", base.size, (0, 0, 0, 0))
+    shadow_draw = ImageDraw.Draw(shadow)
+    sx1, sy1, sx2, sy2 = box[0] + 10, box[1] + 12, box[2] + 10, box[3] + 12
+    shadow_draw.rounded_rectangle((sx1, sy1, sx2, sy2), radius=28, fill=(51, 65, 85, 60))
+    shadow = shadow.filter(ImageFilter.GaussianBlur(8))
+    base.alpha_composite(shadow)
+
+    draw = ImageDraw.Draw(base)
+    draw.rounded_rectangle(box, radius=28, fill=fill, outline=edge, width=4)
+    draw.line((box[0] + 24, box[1] + 22, box[2] - 24, box[1] + 22), fill=edge, width=5)
+    if icon_fill:
+        circle = (box[0] + 18, box[1] + 16, box[0] + 54, box[1] + 52)
+        draw.ellipse(circle, fill=icon_fill)
+    font = get_font(28, bold=True)
+    draw_multiline_center(draw, box, title, font, "#0F172A", spacing=8)
+
+
+def draw_line_arrow(draw, start, end, fill="#475569", width=6, arrow_size=18):
+    draw.line([start, end], fill=fill, width=width)
+    dx = end[0] - start[0]
+    dy = end[1] - start[1]
+    length = max((dx ** 2 + dy ** 2) ** 0.5, 1)
+    ux, uy = dx / length, dy / length
+    px, py = -uy, ux
+    tip = end
+    left = (end[0] - ux * arrow_size - px * arrow_size * 0.55, end[1] - uy * arrow_size - py * arrow_size * 0.55)
+    right = (end[0] - ux * arrow_size + px * arrow_size * 0.55, end[1] - uy * arrow_size + py * arrow_size * 0.55)
+    draw.polygon([tip, left, right], fill=fill)
+
+
+def draw_lane_band(draw, box, title, fill, edge):
+    draw.rounded_rectangle(box, radius=32, fill=fill, outline=edge, width=3)
+    label_box = (box[0] + 20, box[1] + 16, box[0] + 280, box[1] + 62)
+    draw.rounded_rectangle(label_box, radius=18, fill=edge)
+    label_font = get_font(22, bold=True)
+    draw_multiline_center(draw, label_box, title, label_font, "white", spacing=4)
+
+
+def create_canvas(width, height):
+    return Image.new("RGBA", (width, height), "#F8FAFC")
+
+
+def save_canvas(image, output):
+    image.convert("RGB").save(output, quality=95)
 
 
 def draw_lane(ax, xy, width, height, title, fill="#F8FAFC", edge="#D7DEE8"):
@@ -124,151 +233,145 @@ def box_center(xy, width, height):
 def generate_architecture_diagram() -> Path:
     ensure_assets_dir()
     output = ASSETS_DIR / "system_architecture_diagram.png"
-    fig, ax = plt.subplots(figsize=(12, 7))
-    fig.patch.set_facecolor("#F8FAFC")
-    ax.set_facecolor("#F8FAFC")
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-    ax.axis("off")
-    width = 0.24
-    height = 0.11
-    xs = [0.06, 0.38, 0.70]
-    ys = [0.74, 0.47, 0.20]
+    image = create_canvas(1800, 1100)
+    draw = ImageDraw.Draw(image)
 
-    draw_lane(ax, (0.03, 0.66), 0.94, 0.20, "Data Foundation", "#FFFDF8", "#F0E2BC")
-    draw_lane(ax, (0.03, 0.39), 0.94, 0.20, "Model and Governance Layer", "#FAFAFF", "#D9D7FE")
-    draw_lane(ax, (0.03, 0.12), 0.94, 0.20, "Delivery and Cloud Layer", "#F8FCF8", "#D7E9D7")
+    title_font = get_font(48, bold=True)
+    subtitle_font = get_font(22)
+    draw.text((900, 46), "System Architecture Diagram", anchor="mm", font=title_font, fill="#0F172A")
+    draw.text((900, 96), "End-to-end MLOps components and deployment path", anchor="mm", font=subtitle_font, fill="#475569")
 
-    top_left = (xs[0], ys[0])
-    top_mid = (xs[1], ys[0])
-    top_right = (xs[2], ys[0])
-    mid_left = (xs[0], ys[1])
-    mid_mid = (xs[1], ys[1])
-    mid_right = (xs[2], ys[1])
-    bot_left = (xs[0], ys[2])
-    bot_mid = (xs[1], ys[2])
-    bot_right = (xs[2], ys[2])
+    draw_lane_band(draw, (60, 150, 1740, 380), "Data Foundation", "#FFFDF8", "#E8D7AA")
+    draw_lane_band(draw, (60, 430, 1740, 660), "Model and Governance Layer", "#FBFAFF", "#DDD6FE")
+    draw_lane_band(draw, (60, 710, 1740, 940), "Delivery and Cloud Layer", "#F8FCF8", "#CDE6CD")
 
-    draw_box(ax, top_left, width, height, "Raw Data\nGeneration + Weather", "#FFF4E5", "#D97706")
-    draw_box(ax, top_mid, width, height, "DVC + AWS S3\nData Versioning", "#E8F5E9", "#2E7D32")
-    draw_box(ax, top_right, width, height, "Data Ingestion + Preprocessing\nFeature Engineering", "#E3F2FD", "#1565C0")
+    cards = {
+        "raw": (120, 210, 520, 340),
+        "dvc": (700, 210, 1100, 340),
+        "prep": (1280, 210, 1680, 340),
+        "train": (120, 490, 520, 620),
+        "mlflow": (700, 490, 1100, 620),
+        "eval": (1280, 490, 1680, 620),
+        "app": (120, 770, 520, 900),
+        "docker": (700, 770, 1100, 900),
+        "ec2": (1280, 770, 1680, 900),
+    }
 
-    draw_box(ax, mid_left, width, height, "Model Training\nXGBoost", "#F3E5F5", "#7B1FA2")
-    draw_box(ax, mid_mid, width, height, "MLflow Tracking\nParams, Metrics, Artifacts", "#E0F7FA", "#00838F")
-    draw_box(ax, mid_right, width, height, "Evaluation + Monitoring\nPlots + Drift Report", "#FCE4EC", "#C2185B")
+    draw_card(image, cards["raw"], "Raw Data\nGeneration + Weather", "#FFF7ED", "#EA580C", "#FDBA74")
+    draw_card(image, cards["dvc"], "DVC + AWS S3\nData Versioning", "#ECFDF5", "#16A34A", "#86EFAC")
+    draw_card(image, cards["prep"], "Data Ingestion +\nPreprocessing\nFeature Engineering", "#EFF6FF", "#2563EB", "#93C5FD")
+    draw_card(image, cards["train"], "Model Training\nXGBoost", "#FAF5FF", "#9333EA", "#D8B4FE")
+    draw_card(image, cards["mlflow"], "MLflow Tracking\nParams, Metrics,\nArtifacts", "#ECFEFF", "#0891B2", "#A5F3FC")
+    draw_card(image, cards["eval"], "Evaluation + Monitoring\nPlots + Drift Report", "#FDF2F8", "#DB2777", "#F9A8D4")
+    draw_card(image, cards["app"], "Streamlit App\nReal-time Prediction", "#EEF2FF", "#4F46E5", "#A5B4FC")
+    draw_card(image, cards["docker"], "Docker\nContainerized\nDeployment", "#F7FEE7", "#65A30D", "#BEF264")
+    draw_card(image, cards["ec2"], "AWS EC2\nCloud Hosting", "#FFF7ED", "#C2410C", "#FDBA74")
 
-    draw_box(ax, bot_left, width, height, "Streamlit App\nReal-time Prediction", "#E8F0FE", "#3367D6")
-    draw_box(ax, bot_mid, width, height, "Docker\nContainerized Deployment", "#F1F8E9", "#558B2F")
-    draw_box(ax, bot_right, width, height, "AWS EC2\nCloud Hosting", "#FFF3E0", "#EF6C00")
+    def center_right(box):
+        return (box[2], (box[1] + box[3]) // 2)
 
-    draw_arrow(ax, (top_left[0] + width, top_left[1] + height / 2), (top_mid[0], top_mid[1] + height / 2))
-    draw_arrow(ax, (top_mid[0] + width, top_mid[1] + height / 2), (top_right[0], top_right[1] + height / 2))
+    def center_left(box):
+        return (box[0], (box[1] + box[3]) // 2)
 
-    draw_arrow(ax, (top_right[0] + width / 2, top_right[1]), (mid_left[0] + width / 2, mid_left[1] + height))
-    draw_arrow(ax, (mid_left[0] + width, mid_left[1] + height / 2), (mid_mid[0], mid_mid[1] + height / 2))
-    draw_arrow(ax, (mid_mid[0] + width, mid_mid[1] + height / 2), (mid_right[0], mid_right[1] + height / 2))
+    def center_bottom(box):
+        return ((box[0] + box[2]) // 2, box[3])
 
-    draw_arrow(ax, (mid_left[0] + width / 2, mid_left[1]), (bot_left[0] + width / 2, bot_left[1] + height))
-    draw_arrow(ax, (mid_mid[0] + width / 2, mid_mid[1]), (bot_mid[0] + width / 2, bot_mid[1] + height))
-    draw_arrow(ax, (mid_right[0] + width / 2, mid_right[1]), (bot_right[0] + width / 2, bot_right[1] + height))
+    def center_top(box):
+        return ((box[0] + box[2]) // 2, box[1])
 
-    draw_arrow(ax, (bot_left[0] + width, bot_left[1] + height / 2), (bot_mid[0], bot_mid[1] + height / 2))
-    draw_arrow(ax, (bot_mid[0] + width, bot_mid[1] + height / 2), (bot_right[0], bot_right[1] + height / 2))
+    draw_line_arrow(draw, center_right(cards["raw"]), center_left(cards["dvc"]))
+    draw_line_arrow(draw, center_right(cards["dvc"]), center_left(cards["prep"]))
+    draw_line_arrow(draw, center_bottom(cards["prep"]), center_top(cards["train"]))
+    draw_line_arrow(draw, center_right(cards["train"]), center_left(cards["mlflow"]))
+    draw_line_arrow(draw, center_right(cards["mlflow"]), center_left(cards["eval"]))
+    draw_line_arrow(draw, center_bottom(cards["train"]), center_top(cards["app"]))
+    draw_line_arrow(draw, center_bottom(cards["mlflow"]), center_top(cards["docker"]))
+    draw_line_arrow(draw, center_bottom(cards["eval"]), center_top(cards["ec2"]))
+    draw_line_arrow(draw, center_right(cards["app"]), center_left(cards["docker"]))
+    draw_line_arrow(draw, center_right(cards["docker"]), center_left(cards["ec2"]))
 
-    ax.text(0.5, 0.965, "System Architecture Diagram", ha="center", va="center", fontsize=17, weight="bold", color="#0F172A")
-    ax.text(0.5, 0.935, "End-to-end MLOps components and deployment path", ha="center", va="center", fontsize=10, color="#475569")
-    fig.tight_layout()
-    fig.savefig(output, dpi=200, bbox_inches="tight")
-    plt.close(fig)
+    save_canvas(image, output)
     return output
 
 
 def generate_pipeline_flow_diagram() -> Path:
     ensure_assets_dir()
     output = ASSETS_DIR / "pipeline_flow_diagram.png"
-    fig, ax = plt.subplots(figsize=(9, 11))
-    fig.patch.set_facecolor("#F8FAFC")
-    ax.set_facecolor("#F8FAFC")
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-    ax.axis("off")
+    image = create_canvas(1500, 1900)
+    draw = ImageDraw.Draw(image)
+
+    title_font = get_font(46, bold=True)
+    subtitle_font = get_font(22)
+    draw.text((750, 54), "End-to-End Pipeline Flow", anchor="mm", font=title_font, fill="#0F172A")
+    draw.text((750, 104), "Operational sequence from versioned data to cloud-hosted inference", anchor="mm", font=subtitle_font, fill="#475569")
+
+    draw.rounded_rectangle((140, 180, 1360, 1760), radius=40, fill="#FFFFFF", outline="#D8E1EC", width=3)
+    draw.line((280, 250, 280, 1690), fill="#CBD5E1", width=10)
 
     steps = [
-        ("Data Versioning\n(DVC + S3)", "#E8F5E9", "#2E7D32"),
-        ("data_ingestion.py", "#FFF4E5", "#D97706"),
-        ("preprocessing.py", "#E3F2FD", "#1565C0"),
-        ("train.py", "#F3E5F5", "#7B1FA2"),
-        ("evaluate.py", "#FCE4EC", "#C2185B"),
-        ("monitoring.py", "#E0F7FA", "#00838F"),
-        ("app.py (Streamlit)", "#E8F0FE", "#3367D6"),
-        ("Docker + EC2", "#FFF3E0", "#EF6C00"),
+        ("1", "Data Versioning", "DVC + S3 remote stores reproducible raw data snapshots.", "#16A34A", "#ECFDF5"),
+        ("2", "Ingestion", "data_ingestion.py loads generation and weather datasets.", "#EA580C", "#FFF7ED"),
+        ("3", "Preprocessing", "preprocessing.py merges data and creates time features.", "#2563EB", "#EFF6FF"),
+        ("4", "Training", "train.py fits the XGBoost forecasting model.", "#9333EA", "#FAF5FF"),
+        ("5", "Evaluation", "evaluate.py computes RMSE, MAE, R2, and plots.", "#DB2777", "#FDF2F8"),
+        ("6", "Monitoring", "monitoring.py generates drift and governance outputs.", "#0891B2", "#ECFEFF"),
+        ("7", "Prediction App", "Streamlit exposes real-time AC power prediction.", "#4F46E5", "#EEF2FF"),
+        ("8", "Deployment", "Docker container runs the app on AWS EC2.", "#C2410C", "#FFF7ED"),
     ]
 
-    width = 0.58
-    height = 0.07
-    x = 0.28
-    y = 0.87
-    ax.plot([0.17, 0.17], [0.13, 0.90], color="#CBD5E1", lw=3, solid_capstyle="round", zorder=0)
-    for index, (label, fill, edge) in enumerate(steps):
-        draw_box(ax, (x, y), width, height, label, fill, edge, fontsize=11)
-        badge = plt.Circle((0.17, y + height / 2), 0.03, color=edge, zorder=4)
-        ax.add_patch(badge)
-        ax.text(0.17, y + height / 2, str(index + 1), ha="center", va="center", color="white", fontsize=11, weight="bold", zorder=5)
-        draw_arrow(ax, (0.20, y + height / 2), (x, y + height / 2))
-        if index < len(steps) - 1:
-            draw_arrow(ax, (x + width / 2, y), (x + width / 2, y - 0.05))
-        y -= 0.11
+    top = 250
+    row_gap = 170
+    card_box = (380, 0, 1240, 120)
+    for idx, (num, title, body, accent, fill) in enumerate(steps):
+        y = top + idx * row_gap
+        draw.ellipse((220, y + 18, 340, y + 138), fill=accent)
+        num_font = get_font(34, bold=True)
+        draw.text((280, y + 78), num, anchor="mm", font=num_font, fill="white")
+        box = (card_box[0], y, card_box[2], y + 120)
+        draw_card(image, box, f"{title}\n{body}", fill, accent, None)
+        draw_line_arrow(draw, (340, y + 78), (380, y + 78))
+        if idx < len(steps) - 1:
+            draw_line_arrow(draw, (280, y + 138), (280, y + row_gap + 18))
 
-    ax.text(0.5, 0.965, "End-to-End Pipeline Flow", ha="center", va="center", fontsize=17, weight="bold", color="#0F172A")
-    ax.text(0.5, 0.935, "Operational sequence from versioned data to cloud-hosted inference", ha="center", va="center", fontsize=10, color="#475569")
-    fig.tight_layout()
-    fig.savefig(output, dpi=200, bbox_inches="tight")
-    plt.close(fig)
+    save_canvas(image, output)
     return output
 
 
 def generate_methodology_diagram() -> Path:
     ensure_assets_dir()
     output = ASSETS_DIR / "methodology_diagram.png"
-    fig, ax = plt.subplots(figsize=(12, 7))
-    fig.patch.set_facecolor("#F8FAFC")
-    ax.set_facecolor("#F8FAFC")
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-    ax.axis("off")
+    image = create_canvas(1800, 1100)
+    draw = ImageDraw.Draw(image)
 
-    top_width = 0.24
-    top_height = 0.15
-    bottom_width = 0.24
-    bottom_height = 0.15
-    top_y = 0.66
-    bottom_y = 0.30
-    top_xs = [0.06, 0.38, 0.70]
-    bottom_xs = [0.06, 0.38, 0.70]
+    title_font = get_font(46, bold=True)
+    subtitle_font = get_font(22)
+    draw.text((900, 50), "Project Methodology Diagram", anchor="mm", font=title_font, fill="#0F172A")
+    draw.text((900, 100), "How the project moves from data preparation to monitored deployment", anchor="mm", font=subtitle_font, fill="#475569")
 
-    draw_lane(ax, (0.03, 0.60), 0.94, 0.26, "Core Development Phases", "#FCFCFF", "#D9D7FE")
-    draw_lane(ax, (0.03, 0.24), 0.94, 0.26, "Operational Outcomes", "#FBFEFB", "#D7E9D7")
+    draw_lane_band(draw, (80, 170, 1720, 500), "Core Development Phases", "#FCFCFF", "#DDD6FE")
+    draw_lane_band(draw, (80, 590, 1720, 920), "Operational Outcomes", "#FBFEFB", "#D8EFD8")
 
-    draw_box(ax, (top_xs[0], top_y), top_width, top_height, "Data Handling\nLoad, merge, clean,\ncreate time features", "#E3F2FD", "#1565C0")
-    draw_box(ax, (top_xs[1], top_y), top_width, top_height, "Model Development\nTrain/test split,\nXGBoost training", "#F3E5F5", "#7B1FA2")
-    draw_box(ax, (top_xs[2], top_y), top_width, top_height, "Experiment Strategy\nDVC + MLflow + params.yaml", "#E8F5E9", "#2E7D32")
+    top_boxes = [
+        ((140, 265, 540, 415), "Data Handling\nLoad, merge, clean,\ncreate time features", "#EFF6FF", "#2563EB", "#93C5FD"),
+        ((700, 265, 1100, 415), "Model Development\nTrain/test split,\nXGBoost training", "#FAF5FF", "#9333EA", "#D8B4FE"),
+        ((1260, 265, 1660, 415), "Experiment Strategy\nDVC + MLflow +\nparams.yaml", "#ECFDF5", "#16A34A", "#86EFAC"),
+    ]
+    bottom_boxes = [
+        ((140, 685, 540, 835), "Evaluation\nRMSE, MAE, R2,\nplots", "#FDF2F8", "#DB2777", "#F9A8D4"),
+        ((700, 685, 1100, 835), "Monitoring\nDrift report,\npipeline logs", "#ECFEFF", "#0891B2", "#A5F3FC"),
+        ((1260, 685, 1660, 835), "Deployment\nStreamlit, Docker,\nAWS EC2", "#FFF7ED", "#C2410C", "#FDBA74"),
+    ]
 
-    draw_box(ax, (bottom_xs[0], bottom_y), bottom_width, bottom_height, "Evaluation\nRMSE, MAE, R2,\nplots", "#FCE4EC", "#C2185B")
-    draw_box(ax, (bottom_xs[1], bottom_y), bottom_width, bottom_height, "Monitoring\nDrift report,\npipeline logs", "#E0F7FA", "#00838F")
-    draw_box(ax, (bottom_xs[2], bottom_y), bottom_width, bottom_height, "Deployment\nStreamlit, Docker,\nAWS EC2", "#FFF3E0", "#EF6C00")
+    for box, title, fill, edge, icon in top_boxes + bottom_boxes:
+        draw_card(image, box, title, fill, edge, icon)
 
-    draw_arrow(ax, (top_xs[0] + top_width, top_y + top_height / 2), (top_xs[1], top_y + top_height / 2))
-    draw_arrow(ax, (top_xs[1] + top_width, top_y + top_height / 2), (top_xs[2], top_y + top_height / 2))
+    draw_line_arrow(draw, (540, 340), (700, 340))
+    draw_line_arrow(draw, (1100, 340), (1260, 340))
+    draw_line_arrow(draw, (340, 415), (340, 685))
+    draw_line_arrow(draw, (900, 415), (900, 685))
+    draw_line_arrow(draw, (1460, 415), (1460, 685))
 
-    draw_arrow(ax, (top_xs[0] + top_width / 2, top_y), (bottom_xs[0] + bottom_width / 2, bottom_y + bottom_height))
-    draw_arrow(ax, (top_xs[1] + top_width / 2, top_y), (bottom_xs[1] + bottom_width / 2, bottom_y + bottom_height))
-    draw_arrow(ax, (top_xs[2] + top_width / 2, top_y), (bottom_xs[2] + bottom_width / 2, bottom_y + bottom_height))
-
-    ax.text(0.5, 0.935, "Project Methodology Diagram", ha="center", va="center", fontsize=17, weight="bold", color="#0F172A")
-    ax.text(0.5, 0.905, "How the project moves from data preparation to monitored deployment", ha="center", va="center", fontsize=10, color="#475569")
-    fig.tight_layout()
-    fig.savefig(output, dpi=200, bbox_inches="tight")
-    plt.close(fig)
+    save_canvas(image, output)
     return output
 
 
