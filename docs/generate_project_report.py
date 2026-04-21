@@ -109,6 +109,26 @@ def draw_card(base, box, title, fill, edge, icon_fill=None):
     draw_multiline_center(draw, box, title, font, "#0F172A", spacing=8)
 
 
+def draw_dark_card(base, box, title, subtitle, fill, edge, title_color="#E5E7EB", subtitle_color="#C7D2FE"):
+    draw = ImageDraw.Draw(base)
+    draw.rounded_rectangle(box, radius=24, fill=fill, outline=edge, width=3)
+    title_font = get_font(26, bold=True)
+    subtitle_font = get_font(18)
+
+    title_bbox = draw.textbbox((0, 0), title, font=title_font)
+    title_y = box[1] + 18
+    draw.text((box[0] + 40, title_y), title, font=title_font, fill=title_color)
+
+    subtitle_lines = []
+    for raw in subtitle.split("\n"):
+        subtitle_lines.extend(text_box(draw, raw, subtitle_font, box[2] - box[0] - 70))
+    y = title_y + (title_bbox[3] - title_bbox[1]) + 10
+    for line in subtitle_lines:
+        draw.text((box[0] + 40, y), line, font=subtitle_font, fill=subtitle_color)
+        line_bbox = draw.textbbox((0, 0), line, font=subtitle_font)
+        y += (line_bbox[3] - line_bbox[1]) + 6
+
+
 def draw_line_arrow(draw, start, end, fill="#475569", width=6, arrow_size=18):
     draw.line([start, end], fill=fill, width=width)
     dx = end[0] - start[0]
@@ -233,39 +253,44 @@ def box_center(xy, width, height):
 def generate_architecture_diagram() -> Path:
     ensure_assets_dir()
     output = ASSETS_DIR / "system_architecture_diagram.png"
-    image = create_canvas(1800, 1100)
+    image = Image.new("RGBA", (1800, 1100), "#050505")
     draw = ImageDraw.Draw(image)
 
-    title_font = get_font(48, bold=True)
+    title_font = get_font(52, bold=True)
     subtitle_font = get_font(22)
-    draw.text((900, 46), "System Architecture Diagram", anchor="mm", font=title_font, fill="#0F172A")
-    draw.text((900, 96), "End-to-end MLOps components and deployment path", anchor="mm", font=subtitle_font, fill="#475569")
+    draw.text((900, 52), "System architecture diagram", anchor="mm", font=title_font, fill="#F8FAFC")
+    draw.text((900, 108), "End-to-end MLOps components and deployment path", anchor="mm", font=subtitle_font, fill="#D4D4D8")
 
-    draw_lane_band(draw, (60, 150, 1740, 380), "Data Foundation", "#FFFDF8", "#E8D7AA")
-    draw_lane_band(draw, (60, 430, 1740, 660), "Model and Governance Layer", "#FBFAFF", "#DDD6FE")
-    draw_lane_band(draw, (60, 710, 1740, 940), "Delivery and Cloud Layer", "#F8FCF8", "#CDE6CD")
+    draw.rounded_rectangle((110, 170, 1690, 440), radius=34, fill="#0F5B4C", outline="#5EEAD4", width=2)
+    draw.rounded_rectangle((110, 500, 1690, 770), radius=34, fill="#4C3F9B", outline="#A78BFA", width=2)
+    draw.rounded_rectangle((110, 830, 1690, 1070), radius=34, fill="#565656", outline="#A3A3A3", width=2)
+
+    lane_font = get_font(24, bold=True)
+    draw.text((150, 205), "Data foundation", font=lane_font, fill="#0B7661")
+    draw.text((150, 535), "Model and experiment", font=lane_font, fill="#5C50C4")
+    draw.text((150, 865), "Delivery and cloud", font=lane_font, fill="#737373")
 
     cards = {
-        "raw": (120, 210, 520, 340),
-        "dvc": (700, 210, 1100, 340),
-        "prep": (1280, 210, 1680, 340),
-        "train": (120, 490, 520, 620),
-        "mlflow": (700, 490, 1100, 620),
-        "eval": (1280, 490, 1680, 620),
-        "app": (120, 770, 520, 900),
-        "docker": (700, 770, 1100, 900),
-        "ec2": (1280, 770, 1680, 900),
+        "raw": (160, 245, 550, 385),
+        "dvc": (640, 245, 1030, 385),
+        "prep": (1120, 245, 1580, 385),
+        "train": (160, 575, 550, 715),
+        "mlflow": (640, 575, 1090, 715),
+        "eval": (1170, 575, 1580, 715),
+        "app": (160, 905, 600, 1015),
+        "github": (700, 905, 1140, 1015),
+        "ec2": (1210, 905, 1600, 1015),
     }
 
-    draw_card(image, cards["raw"], "Raw Data\nGeneration + Weather", "#FFF7ED", "#EA580C", "#FDBA74")
-    draw_card(image, cards["dvc"], "DVC + AWS S3\nData Versioning", "#ECFDF5", "#16A34A", "#86EFAC")
-    draw_card(image, cards["prep"], "Data Ingestion +\nPreprocessing\nFeature Engineering", "#EFF6FF", "#2563EB", "#93C5FD")
-    draw_card(image, cards["train"], "Model Training\nXGBoost", "#FAF5FF", "#9333EA", "#D8B4FE")
-    draw_card(image, cards["mlflow"], "MLflow Tracking\nParams, Metrics,\nArtifacts", "#ECFEFF", "#0891B2", "#A5F3FC")
-    draw_card(image, cards["eval"], "Evaluation + Monitoring\nPlots + Drift Report", "#FDF2F8", "#DB2777", "#F9A8D4")
-    draw_card(image, cards["app"], "Streamlit App\nReal-time Prediction", "#EEF2FF", "#4F46E5", "#A5B4FC")
-    draw_card(image, cards["docker"], "Docker\nContainerized\nDeployment", "#F7FEE7", "#65A30D", "#BEF264")
-    draw_card(image, cards["ec2"], "AWS EC2\nCloud Hosting", "#FFF7ED", "#C2410C", "#FDBA74")
+    draw_dark_card(image, cards["raw"], "Raw data", "Generation + weather", "#115E50", "#6EE7B7", "#B7F7DF", "#6EE7B7")
+    draw_dark_card(image, cards["dvc"], "DVC + AWS S3", "Data versioning", "#2F5D0C", "#A3E635", "#D9F99D", "#A3E635")
+    draw_dark_card(image, cards["prep"], "Ingestion + preprocessing", "Feature engineering", "#1E4F8A", "#93C5FD", "#DBEAFE", "#93C5FD")
+    draw_dark_card(image, cards["train"], "Model training", "XGBoost regressor", "#4A3FA3", "#C4B5FD", "#DDD6FE", "#C4B5FD")
+    draw_dark_card(image, cards["mlflow"], "MLflow tracking", "Params, metrics, artifacts", "#7C4706", "#FBBF24", "#FDE68A", "#FBBF24")
+    draw_dark_card(image, cards["eval"], "Evaluation + monitoring", "Plots + drift report", "#8A3817", "#FDBA74", "#FED7AA", "#FDBA74")
+    draw_dark_card(image, cards["app"], "Streamlit app", "Real-time prediction", "#1E4F8A", "#93C5FD", "#DBEAFE", "#93C5FD")
+    draw_dark_card(image, cards["github"], "GitHub Actions", "CI/CD automation", "#57534E", "#D6D3D1", "#E7E5E4", "#D6D3D1")
+    draw_dark_card(image, cards["ec2"], "AWS EC2", "Cloud hosting", "#115E50", "#5EEAD4", "#99F6E4", "#5EEAD4")
 
     def center_right(box):
         return (box[2], (box[1] + box[3]) // 2)
@@ -279,16 +304,16 @@ def generate_architecture_diagram() -> Path:
     def center_top(box):
         return ((box[0] + box[2]) // 2, box[1])
 
-    draw_line_arrow(draw, center_right(cards["raw"]), center_left(cards["dvc"]))
-    draw_line_arrow(draw, center_right(cards["dvc"]), center_left(cards["prep"]))
-    draw_line_arrow(draw, center_bottom(cards["prep"]), center_top(cards["train"]))
-    draw_line_arrow(draw, center_right(cards["train"]), center_left(cards["mlflow"]))
-    draw_line_arrow(draw, center_right(cards["mlflow"]), center_left(cards["eval"]))
-    draw_line_arrow(draw, center_bottom(cards["train"]), center_top(cards["app"]))
-    draw_line_arrow(draw, center_bottom(cards["mlflow"]), center_top(cards["docker"]))
-    draw_line_arrow(draw, center_bottom(cards["eval"]), center_top(cards["ec2"]))
-    draw_line_arrow(draw, center_right(cards["app"]), center_left(cards["docker"]))
-    draw_line_arrow(draw, center_right(cards["docker"]), center_left(cards["ec2"]))
+    draw_line_arrow(draw, center_right(cards["raw"]), center_left(cards["dvc"]), fill="#A3A3A3", width=5)
+    draw_line_arrow(draw, center_right(cards["dvc"]), center_left(cards["prep"]), fill="#A3A3A3", width=5)
+    draw_line_arrow(draw, center_bottom(cards["raw"]), center_top(cards["train"]), fill="#A3A3A3", width=5)
+    draw_line_arrow(draw, center_bottom(cards["prep"]), center_top(cards["eval"]), fill="#A3A3A3", width=5)
+    draw_line_arrow(draw, center_right(cards["train"]), center_left(cards["mlflow"]), fill="#A3A3A3", width=5)
+    draw_line_arrow(draw, center_right(cards["mlflow"]), center_left(cards["eval"]), fill="#A3A3A3", width=5)
+    draw_line_arrow(draw, center_bottom(cards["train"]), center_top(cards["app"]), fill="#A3A3A3", width=5)
+    draw_line_arrow(draw, center_bottom(cards["eval"]), center_top(cards["ec2"]), fill="#A3A3A3", width=5)
+    draw_line_arrow(draw, center_right(cards["app"]), center_left(cards["github"]), fill="#A3A3A3", width=5)
+    draw_line_arrow(draw, center_right(cards["github"]), center_left(cards["ec2"]), fill="#A3A3A3", width=5)
 
     save_canvas(image, output)
     return output
@@ -297,41 +322,41 @@ def generate_architecture_diagram() -> Path:
 def generate_pipeline_flow_diagram() -> Path:
     ensure_assets_dir()
     output = ASSETS_DIR / "pipeline_flow_diagram.png"
-    image = create_canvas(1500, 1900)
+    image = Image.new("RGBA", (1500, 1900), "#050505")
     draw = ImageDraw.Draw(image)
 
     title_font = get_font(46, bold=True)
     subtitle_font = get_font(22)
-    draw.text((750, 54), "End-to-End Pipeline Flow", anchor="mm", font=title_font, fill="#0F172A")
-    draw.text((750, 104), "Operational sequence from versioned data to cloud-hosted inference", anchor="mm", font=subtitle_font, fill="#475569")
+    draw.text((750, 54), "End-to-end pipeline flow", anchor="mm", font=title_font, fill="#F8FAFC")
+    draw.text((750, 104), "Operational sequence from versioned data to cloud-hosted inference", anchor="mm", font=subtitle_font, fill="#D4D4D8")
 
-    draw.rounded_rectangle((140, 180, 1360, 1760), radius=40, fill="#FFFFFF", outline="#D8E1EC", width=3)
-    draw.line((280, 250, 280, 1690), fill="#CBD5E1", width=10)
+    draw.line((210, 245, 210, 1710), fill="#D4D4D8", width=6)
+    draw.line((210, 1710, 210, 1800), fill="#D4D4D8", width=6)
 
     steps = [
-        ("1", "Data Versioning", "DVC + S3 remote stores reproducible raw data snapshots.", "#16A34A", "#ECFDF5"),
-        ("2", "Ingestion", "data_ingestion.py loads generation and weather datasets.", "#EA580C", "#FFF7ED"),
-        ("3", "Preprocessing", "preprocessing.py merges data and creates time features.", "#2563EB", "#EFF6FF"),
-        ("4", "Training", "train.py fits the XGBoost forecasting model.", "#9333EA", "#FAF5FF"),
-        ("5", "Evaluation", "evaluate.py computes RMSE, MAE, R2, and plots.", "#DB2777", "#FDF2F8"),
-        ("6", "Monitoring", "monitoring.py generates drift and governance outputs.", "#0891B2", "#ECFEFF"),
-        ("7", "Prediction App", "Streamlit exposes real-time AC power prediction.", "#4F46E5", "#EEF2FF"),
-        ("8", "Deployment", "Docker container runs the app on AWS EC2.", "#C2410C", "#FFF7ED"),
+        ("1", "Data versioning", "DVC + S3 remote stores reproducible raw data snapshots", "#065F46", "#34D399"),
+        ("2", "Ingestion", "data_ingestion.py loads generation and weather datasets", "#1D4ED8", "#93C5FD"),
+        ("3", "Preprocessing", "preprocessing.py merges data and creates HOUR, DAY, MONTH features", "#4338CA", "#C4B5FD"),
+        ("4", "Training", "train.py fits the XGBoost forecasting model with MLflow logging", "#A16207", "#F59E0B"),
+        ("5", "Evaluation", "evaluate.py computes RMSE, MAE, R², and result visualizations", "#9A3412", "#FB923C"),
+        ("6", "Monitoring", "monitoring.py generates drift report and governance outputs", "#3F6212", "#84CC16"),
+        ("7", "Prediction app", "app.py exposes real-time AC power prediction via Streamlit", "#1D4ED8", "#93C5FD"),
+        ("8", "Deployment", "Application runs on AWS EC2 using Docker and CI/CD validation", "#525252", "#A3A3A3"),
     ]
 
     top = 250
     row_gap = 170
-    card_box = (380, 0, 1240, 120)
+    card_box = (300, 0, 1320, 110)
     for idx, (num, title, body, accent, fill) in enumerate(steps):
         y = top + idx * row_gap
-        draw.ellipse((220, y + 18, 340, y + 138), fill=accent)
+        draw.ellipse((160, y + 6, 260, y + 106), fill=accent, outline="#E5E7EB", width=2)
         num_font = get_font(34, bold=True)
-        draw.text((280, y + 78), num, anchor="mm", font=num_font, fill="white")
-        box = (card_box[0], y, card_box[2], y + 120)
-        draw_card(image, box, f"{title}\n{body}", fill, accent, None)
-        draw_line_arrow(draw, (340, y + 78), (380, y + 78))
+        draw.text((210, y + 56), num, anchor="mm", font=num_font, fill="#E5E7EB")
+        box = (card_box[0], y, card_box[2], y + 110)
+        draw_dark_card(image, box, title, body, accent, fill, "#E5E7EB", fill)
+        draw_line_arrow(draw, (260, y + 56), (300, y + 56), fill="#D4D4D8", width=4)
         if idx < len(steps) - 1:
-            draw_line_arrow(draw, (280, y + 138), (280, y + row_gap + 18))
+            draw_line_arrow(draw, (210, y + 106), (210, y + row_gap + 6), fill="#D4D4D8", width=4)
 
     save_canvas(image, output)
     return output
@@ -343,33 +368,39 @@ def generate_methodology_diagram() -> Path:
     image = create_canvas(1800, 1100)
     draw = ImageDraw.Draw(image)
 
-    title_font = get_font(46, bold=True)
-    subtitle_font = get_font(22)
-    draw.text((900, 50), "Project Methodology Diagram", anchor="mm", font=title_font, fill="#0F172A")
-    draw.text((900, 100), "How the project moves from data preparation to monitored deployment", anchor="mm", font=subtitle_font, fill="#475569")
+    title_font = get_font(44, bold=True)
+    subtitle_font = get_font(20)
+    draw.text((900, 58), "Project Methodology Diagram", anchor="mm", font=title_font, fill="#1F2937")
+    draw.text((900, 108), "How the project moves from data preparation to monitored deployment", anchor="mm", font=subtitle_font, fill="#6B7280")
 
-    draw_lane_band(draw, (80, 170, 1720, 500), "Core Development Phases", "#FCFCFF", "#DDD6FE")
-    draw_lane_band(draw, (80, 590, 1720, 920), "Operational Outcomes", "#FBFEFB", "#D8EFD8")
+    draw.rounded_rectangle((80, 180, 1720, 520), radius=34, fill="#FCFAFF", outline="#C4B5FD", width=2)
+    draw.rounded_rectangle((80, 620, 1720, 960), radius=34, fill="#FBFEFB", outline="#CDECCF", width=2)
+
+    tag_font = get_font(18, bold=True)
+    draw.rounded_rectangle((100, 200, 360, 245), radius=18, fill="#E9D5FF")
+    draw.text((230, 223), "Core Development\nPhases", anchor="mm", font=tag_font, fill="white")
+    draw.rounded_rectangle((100, 640, 360, 685), radius=18, fill="#D9F99D")
+    draw.text((230, 663), "Operational\nOutcomes", anchor="mm", font=tag_font, fill="white")
 
     top_boxes = [
-        ((140, 265, 540, 415), "Data Handling\nLoad, merge, clean,\ncreate time features", "#EFF6FF", "#2563EB", "#93C5FD"),
-        ((700, 265, 1100, 415), "Model Development\nTrain/test split,\nXGBoost training", "#FAF5FF", "#9333EA", "#D8B4FE"),
-        ((1260, 265, 1660, 415), "Experiment Strategy\nDVC + MLflow +\nparams.yaml", "#ECFDF5", "#16A34A", "#86EFAC"),
+        ((140, 295, 520, 435), "Data Handling\nLoad, merge, clean,\ncreate time features", "#F8FBFF", "#2563EB", "#93C5FD"),
+        ((700, 295, 1080, 435), "Model Development\nTrain/test split,\nXGBoost training", "#FCF8FF", "#9333EA", "#D8B4FE"),
+        ((1260, 295, 1640, 435), "Experiment Strategy\nDVC + MLflow +\nparams.yaml", "#F7FFF9", "#16A34A", "#86EFAC"),
     ]
     bottom_boxes = [
-        ((140, 685, 540, 835), "Evaluation\nRMSE, MAE, R2,\nplots", "#FDF2F8", "#DB2777", "#F9A8D4"),
-        ((700, 685, 1100, 835), "Monitoring\nDrift report,\npipeline logs", "#ECFEFF", "#0891B2", "#A5F3FC"),
-        ((1260, 685, 1660, 835), "Deployment\nStreamlit, Docker,\nAWS EC2", "#FFF7ED", "#C2410C", "#FDBA74"),
+        ((140, 735, 520, 875), "Evaluation\nRMSE, MAE, R2,\nplots", "#FFF8FB", "#DB2777", "#F9A8D4"),
+        ((700, 735, 1080, 875), "Monitoring\nDrift report,\npipeline logs", "#F5FDFF", "#0891B2", "#A5F3FC"),
+        ((1260, 735, 1640, 875), "Deployment\nStreamlit, Docker,\nAWS EC2", "#FFF9F5", "#EA580C", "#FDBA74"),
     ]
 
     for box, title, fill, edge, icon in top_boxes + bottom_boxes:
         draw_card(image, box, title, fill, edge, icon)
 
-    draw_line_arrow(draw, (540, 340), (700, 340))
-    draw_line_arrow(draw, (1100, 340), (1260, 340))
-    draw_line_arrow(draw, (340, 415), (340, 685))
-    draw_line_arrow(draw, (900, 415), (900, 685))
-    draw_line_arrow(draw, (1460, 415), (1460, 685))
+    draw_line_arrow(draw, (520, 365), (700, 365), fill="#475569", width=4)
+    draw_line_arrow(draw, (1080, 365), (1260, 365), fill="#475569", width=4)
+    draw_line_arrow(draw, (330, 435), (330, 735), fill="#475569", width=4)
+    draw_line_arrow(draw, (890, 435), (890, 735), fill="#475569", width=4)
+    draw_line_arrow(draw, (1450, 435), (1450, 735), fill="#475569", width=4)
 
     save_canvas(image, output)
     return output
