@@ -9,7 +9,7 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from docx.shared import Inches, Pt
+from docx.shared import Inches, Pt, RGBColor
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -29,17 +29,61 @@ def ensure_assets_dir():
     ASSETS_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def draw_lane(ax, xy, width, height, title, fill="#F8FAFC", edge="#D7DEE8"):
+    lane = FancyBboxPatch(
+        xy,
+        width,
+        height,
+        boxstyle="round,pad=0.01,rounding_size=0.025",
+        linewidth=1.0,
+        edgecolor=edge,
+        facecolor=fill,
+        zorder=0,
+    )
+    ax.add_patch(lane)
+    ax.text(
+        xy[0] + 0.02,
+        xy[1] + height - 0.035,
+        title,
+        ha="left",
+        va="center",
+        fontsize=11,
+        color="#334155",
+        weight="bold",
+    )
+
+
 def draw_box(ax, xy, width, height, text, facecolor="#E8F0FE", edgecolor="#3367D6", fontsize=10):
+    shadow = FancyBboxPatch(
+        (xy[0] + 0.008, xy[1] - 0.01),
+        width,
+        height,
+        boxstyle="round,pad=0.02,rounding_size=0.02",
+        linewidth=0,
+        facecolor="#CBD5E1",
+        alpha=0.35,
+        zorder=1,
+    )
+    ax.add_patch(shadow)
     box = FancyBboxPatch(
         xy,
         width,
         height,
         boxstyle="round,pad=0.02,rounding_size=0.02",
-        linewidth=1.5,
+        linewidth=1.8,
         edgecolor=edgecolor,
         facecolor=facecolor,
+        zorder=2,
     )
     ax.add_patch(box)
+    ax.plot(
+        [xy[0] + 0.02, xy[0] + width - 0.02],
+        [xy[1] + height - 0.02, xy[1] + height - 0.02],
+        color=edgecolor,
+        lw=2.2,
+        solid_capstyle="round",
+        zorder=3,
+    )
     ax.text(
         xy[0] + width / 2,
         xy[1] + height / 2,
@@ -49,6 +93,8 @@ def draw_box(ax, xy, width, height, text, facecolor="#E8F0FE", edgecolor="#3367D
         fontsize=fontsize,
         weight="bold",
         wrap=True,
+        color="#0F172A",
+        zorder=4,
     )
 
 
@@ -57,7 +103,7 @@ def draw_arrow(ax, start, end, text=None):
         "",
         xy=end,
         xytext=start,
-        arrowprops=dict(arrowstyle="->", lw=1.8, color="#555555"),
+        arrowprops=dict(arrowstyle="-|>", lw=1.8, color="#475569", shrinkA=6, shrinkB=6),
     )
     if text:
         ax.text(
@@ -79,13 +125,19 @@ def generate_architecture_diagram() -> Path:
     ensure_assets_dir()
     output = ASSETS_DIR / "system_architecture_diagram.png"
     fig, ax = plt.subplots(figsize=(12, 7))
+    fig.patch.set_facecolor("#F8FAFC")
+    ax.set_facecolor("#F8FAFC")
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     ax.axis("off")
     width = 0.24
-    height = 0.12
+    height = 0.11
     xs = [0.06, 0.38, 0.70]
-    ys = [0.76, 0.50, 0.24]
+    ys = [0.74, 0.47, 0.20]
+
+    draw_lane(ax, (0.03, 0.66), 0.94, 0.20, "Data Foundation", "#FFFDF8", "#F0E2BC")
+    draw_lane(ax, (0.03, 0.39), 0.94, 0.20, "Model and Governance Layer", "#FAFAFF", "#D9D7FE")
+    draw_lane(ax, (0.03, 0.12), 0.94, 0.20, "Delivery and Cloud Layer", "#F8FCF8", "#D7E9D7")
 
     top_left = (xs[0], ys[0])
     top_mid = (xs[1], ys[0])
@@ -123,7 +175,8 @@ def generate_architecture_diagram() -> Path:
     draw_arrow(ax, (bot_left[0] + width, bot_left[1] + height / 2), (bot_mid[0], bot_mid[1] + height / 2))
     draw_arrow(ax, (bot_mid[0] + width, bot_mid[1] + height / 2), (bot_right[0], bot_right[1] + height / 2))
 
-    ax.text(0.5, 0.95, "System Architecture Diagram", ha="center", va="center", fontsize=16, weight="bold")
+    ax.text(0.5, 0.965, "System Architecture Diagram", ha="center", va="center", fontsize=17, weight="bold", color="#0F172A")
+    ax.text(0.5, 0.935, "End-to-end MLOps components and deployment path", ha="center", va="center", fontsize=10, color="#475569")
     fig.tight_layout()
     fig.savefig(output, dpi=200, bbox_inches="tight")
     plt.close(fig)
@@ -134,6 +187,8 @@ def generate_pipeline_flow_diagram() -> Path:
     ensure_assets_dir()
     output = ASSETS_DIR / "pipeline_flow_diagram.png"
     fig, ax = plt.subplots(figsize=(9, 11))
+    fig.patch.set_facecolor("#F8FAFC")
+    ax.set_facecolor("#F8FAFC")
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     ax.axis("off")
@@ -149,17 +204,23 @@ def generate_pipeline_flow_diagram() -> Path:
         ("Docker + EC2", "#FFF3E0", "#EF6C00"),
     ]
 
-    width = 0.54
-    height = 0.075
-    x = 0.23
+    width = 0.58
+    height = 0.07
+    x = 0.28
     y = 0.87
+    ax.plot([0.17, 0.17], [0.13, 0.90], color="#CBD5E1", lw=3, solid_capstyle="round", zorder=0)
     for index, (label, fill, edge) in enumerate(steps):
         draw_box(ax, (x, y), width, height, label, fill, edge, fontsize=11)
+        badge = plt.Circle((0.17, y + height / 2), 0.03, color=edge, zorder=4)
+        ax.add_patch(badge)
+        ax.text(0.17, y + height / 2, str(index + 1), ha="center", va="center", color="white", fontsize=11, weight="bold", zorder=5)
+        draw_arrow(ax, (0.20, y + height / 2), (x, y + height / 2))
         if index < len(steps) - 1:
             draw_arrow(ax, (x + width / 2, y), (x + width / 2, y - 0.05))
         y -= 0.11
 
-    ax.text(0.5, 0.965, "End-to-End Pipeline Flow", ha="center", va="center", fontsize=16, weight="bold")
+    ax.text(0.5, 0.965, "End-to-End Pipeline Flow", ha="center", va="center", fontsize=17, weight="bold", color="#0F172A")
+    ax.text(0.5, 0.935, "Operational sequence from versioned data to cloud-hosted inference", ha="center", va="center", fontsize=10, color="#475569")
     fig.tight_layout()
     fig.savefig(output, dpi=200, bbox_inches="tight")
     plt.close(fig)
@@ -170,6 +231,8 @@ def generate_methodology_diagram() -> Path:
     ensure_assets_dir()
     output = ASSETS_DIR / "methodology_diagram.png"
     fig, ax = plt.subplots(figsize=(12, 7))
+    fig.patch.set_facecolor("#F8FAFC")
+    ax.set_facecolor("#F8FAFC")
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     ax.axis("off")
@@ -182,6 +245,9 @@ def generate_methodology_diagram() -> Path:
     bottom_y = 0.30
     top_xs = [0.06, 0.38, 0.70]
     bottom_xs = [0.06, 0.38, 0.70]
+
+    draw_lane(ax, (0.03, 0.60), 0.94, 0.26, "Core Development Phases", "#FCFCFF", "#D9D7FE")
+    draw_lane(ax, (0.03, 0.24), 0.94, 0.26, "Operational Outcomes", "#FBFEFB", "#D7E9D7")
 
     draw_box(ax, (top_xs[0], top_y), top_width, top_height, "Data Handling\nLoad, merge, clean,\ncreate time features", "#E3F2FD", "#1565C0")
     draw_box(ax, (top_xs[1], top_y), top_width, top_height, "Model Development\nTrain/test split,\nXGBoost training", "#F3E5F5", "#7B1FA2")
@@ -198,7 +264,8 @@ def generate_methodology_diagram() -> Path:
     draw_arrow(ax, (top_xs[1] + top_width / 2, top_y), (bottom_xs[1] + bottom_width / 2, bottom_y + bottom_height))
     draw_arrow(ax, (top_xs[2] + top_width / 2, top_y), (bottom_xs[2] + bottom_width / 2, bottom_y + bottom_height))
 
-    ax.text(0.5, 0.93, "Project Methodology Diagram", ha="center", va="center", fontsize=16, weight="bold")
+    ax.text(0.5, 0.935, "Project Methodology Diagram", ha="center", va="center", fontsize=17, weight="bold", color="#0F172A")
+    ax.text(0.5, 0.905, "How the project moves from data preparation to monitored deployment", ha="center", va="center", fontsize=10, color="#475569")
     fig.tight_layout()
     fig.savefig(output, dpi=200, bbox_inches="tight")
     plt.close(fig)
@@ -230,21 +297,26 @@ def set_base_style(document: Document):
     style = document.styles["Normal"]
     style.font.name = "Times New Roman"
     style.font.size = Pt(12)
-    style.paragraph_format.space_after = Pt(6)
-    style.paragraph_format.line_spacing = 1.15
+    style.paragraph_format.space_after = Pt(8)
+    style.paragraph_format.line_spacing = 1.2
 
     for name, size in [("Title", 20), ("Heading 1", 16), ("Heading 2", 14)]:
         style = document.styles[name]
         style.font.name = "Times New Roman"
         style.font.size = Pt(size)
         style.font.bold = True
+        if style.font:
+            style.font.color.rgb = RGBColor(31, 41, 55)
 
 
 def add_paragraph(document: Document, text: str, *, bold: bool = False, italic: bool = False):
     p = document.add_paragraph()
+    p.paragraph_format.space_after = Pt(8)
     run = p.add_run(text)
     run.bold = bold
     run.italic = italic
+    run.font.name = "Times New Roman"
+    run.font.size = Pt(12)
     return p
 
 
@@ -262,6 +334,11 @@ def add_table(document: Document, headers, rows):
         for paragraph in hdr[i].paragraphs:
             for run in paragraph.runs:
                 run.bold = True
+                run.font.color.rgb = RGBColor(255, 255, 255)
+                run.font.name = "Times New Roman"
+            shading = OxmlElement("w:shd")
+            shading.set(qn("w:fill"), "1F4E79")
+            hdr[i]._tc.get_or_add_tcPr().append(shading)
     for row in rows:
         cells = table.add_row().cells
         for i, value in enumerate(row):
@@ -273,16 +350,66 @@ def add_image(document: Document, path: Path, caption: str, width: float = 5.8):
     if not path.exists():
         return
     p = document.add_paragraph()
+    p.paragraph_format.space_before = Pt(8)
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p.add_run().add_picture(str(path), width=Inches(width))
     cap = document.add_paragraph(caption)
     cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    cap.paragraph_format.space_after = Pt(10)
     if cap.runs:
         cap.runs[0].italic = True
+        cap.runs[0].font.color.rgb = RGBColor(71, 85, 105)
+
+
+def add_cover_block(document: Document):
+    title = document.add_paragraph()
+    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    title.paragraph_format.space_before = Pt(70)
+    title.paragraph_format.space_after = Pt(20)
+    run = title.add_run("Solar Power Generation Forecasting")
+    run.bold = True
+    run.font.size = Pt(24)
+    run.font.name = "Times New Roman"
+    run.font.color.rgb = RGBColor(20, 58, 95)
+
+    subtitle = document.add_paragraph()
+    subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    subtitle.paragraph_format.space_after = Pt(28)
+    run = subtitle.add_run("An End-to-End MLOps Pipeline on AWS")
+    run.font.size = Pt(18)
+    run.font.name = "Times New Roman"
+    run.font.color.rgb = RGBColor(71, 85, 105)
+
+    for line in [
+        "Student Names: _________________________________",
+        "Roll Numbers: _________________________________",
+        "Course Name: Essentials of MLOps",
+        "Faculty Name: _________________________________",
+        "Department of Artificial Intelligence and Machine Learning",
+        "Academic Year: 2025-2026",
+    ]:
+        p = document.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p.paragraph_format.space_after = Pt(8)
+        run = p.add_run(line)
+        run.font.name = "Times New Roman"
+        run.font.size = Pt(12)
+
+
+def add_section_divider(document: Document):
+    p = document.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = p.add_run("_" * 55)
+    run.font.color.rgb = RGBColor(148, 163, 184)
 
 
 def add_section_heading(document: Document, title: str, level: int = 1):
-    return document.add_heading(title, level=level)
+    heading = document.add_heading(title, level=level)
+    heading.paragraph_format.space_before = Pt(12)
+    heading.paragraph_format.space_after = Pt(6)
+    if heading.runs:
+        heading.runs[0].font.color.rgb = RGBColor(31, 41, 55)
+    return heading
 
 
 def load_json(path: Path):
@@ -319,26 +446,7 @@ def write_report():
     section.right_margin = Inches(1)
     add_page_number(section)
 
-    title = document.add_paragraph()
-    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = title.add_run("Solar Power Generation Forecasting using an End-to-End MLOps Pipeline on AWS")
-    run.bold = True
-    run.font.size = Pt(20)
-    run.font.name = "Times New Roman"
-
-    for line in [
-        "",
-        "Student Names: _________________________________",
-        "Roll Numbers: _________________________________",
-        "Course Name: Essentials of MLOps",
-        "Faculty Name: _________________________________",
-        "",
-        "Department of Artificial Intelligence and Machine Learning",
-        "",
-        "Academic Year: 2025-2026",
-    ]:
-        p = document.add_paragraph(line)
-        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    add_cover_block(document)
 
     document.add_page_break()
 
