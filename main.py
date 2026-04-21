@@ -15,6 +15,16 @@ if __name__ == "__main__":
     mlflow.set_experiment("solar-power-forecasting")
 
     with mlflow.start_run():
+        mlflow.set_tags(
+            {
+                "project": "solar-power-mlops",
+                "app_entrypoint": "app.py",
+                "interface": "streamlit-dashboard",
+                "deployment_target": "aws-ec2",
+                "ci_pipeline": "github-actions",
+            }
+        )
+
         # Step 1: Ingest
         gen_df, weather_df = ingest_data()
 

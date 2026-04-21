@@ -1,0 +1,42 @@
+name: Deploy Streamlit App To EC2
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-ec2-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy latest revision on EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          port: 22
+          script_stop: true
+          script: |
+            set -e
+            if [ ! -d "$HOME/solar-power-mlops/.git" ]; then
+              rm -rf "$HOME/solar-power-mlops"
+              git clone https://github.com/${{ github.repository }}.git "$HOME/solar-power-mlops"
+            fi
+
+            cd "$HOME/solar-power-mlops"
+            git fetch origin main
+            git reset --hard origin/main
+
+            docker rm -f solar-app || true
+            docker build -t solar-power-mlops .
+            docker run -d \
+              --restart unless-stopped \
+              -p 8501:8501 \
+              --name solar-app \
+              solar-power-mlops

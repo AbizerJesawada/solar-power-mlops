@@ -245,6 +245,36 @@ Workflow file:
 .github/workflows/ci.yml
 ```
 
+## Automated EC2 Deployment
+
+The repository also includes a deployment workflow that can redeploy the
+Dockerized Streamlit app to an EC2 instance whenever code is pushed to `main`.
+
+Workflow file:
+
+```text
+.github/workflows/deploy-ec2.yml
+```
+
+Required GitHub repository secrets:
+
+```text
+EC2_HOST
+EC2_USER
+EC2_SSH_PRIVATE_KEY
+```
+
+Deployment behavior:
+
+- Connects to the EC2 instance over SSH
+- Clones the repository if it is not already present
+- Fetches the latest `main` branch state
+- Rebuilds the Docker image
+- Recreates the `solar-app` container on port `8501`
+
+This keeps the deployed Streamlit dashboard aligned with the latest GitHub
+changes after each push to `main`.
+
 ## Visualizations
 
 Evaluation plots:
@@ -398,6 +428,10 @@ docker build -t solar-power-mlops .
 docker run -d -p 8501:8501 --name solar-app solar-power-mlops
 docker ps
 ```
+
+If you enable the deployment workflow, GitHub Actions can perform the update
+steps automatically after pushes to `main`, so the EC2 instance stays in sync
+with the repository without a manual SSH session.
 
 Deployed app URL:
 
