@@ -201,6 +201,14 @@ The prediction workflow returns:
 Predicted AC Power
 ```
 
+### Production Deploy Note
+
+For EC2 or Docker deployments, use the dedicated runtime image defined by
+`Dockerfile` and `docker-requirements.txt`. The runtime dependency list is kept
+intentionally smaller than `requirements.txt` so the deployed container avoids
+installing training and MLOps-only packages such as DVC and MLflow, which helps
+reduce image size and cold-start time.
+
 ## Monitoring and Drift Detection
 
 The project includes a simple data drift monitoring step in
@@ -458,6 +466,28 @@ docker build -t solar-power-mlops .
 docker run -d --restart unless-stopped -p 8501:8501 --name solar-app solar-power-mlops
 docker ps
 ```
+
+PowerShell helpers for Windows:
+
+```powershell
+.\scripts\setup-ec2.ps1 -Ec2Host "<EC2_PUBLIC_IP>" -KeyPath "C:\path\to\your-key.pem"
+.\scripts\deploy-ec2.ps1 -Ec2Host "<EC2_PUBLIC_IP>" -KeyPath "C:\path\to\your-key.pem"
+```
+
+Optional parameters:
+
+```text
+-User ubuntu
+-Branch main
+-RepoDir ~/solar-power-mlops
+-ContainerName solar-app
+-ImageName solar-power-mlops
+-AppPort 8501
+```
+
+Use `setup-ec2.ps1` for first-time server setup and container launch. Use
+`deploy-ec2.ps1` later to pull the latest code from `main`, rebuild the Docker
+image, and restart the app container from PowerShell.
 
 GitHub Actions deployment status:
 
